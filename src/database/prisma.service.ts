@@ -53,11 +53,11 @@ export class PrismaService
 
     // Event handlers del pool
     pool.on('connect', (client) => {
-      isDevelopment && logger.debug('New client connected to pool');
+      isDevelopment && this.logger.debug('New client connected to pool');
     });
 
     pool.on('error', (err, client) => {
-      logger.error('Unexpected error on idle client', err);
+      this.logger.error('Unexpected error on idle client', err);
     });
 
     // ============================================
