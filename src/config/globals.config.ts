@@ -23,7 +23,9 @@ export const app = registerAs('app', () => ({
 }));
 
 export const database = registerAs('database', () => ({
-  url: process.env.DATABASE_URL,
+  url: process.env.DATABASE_URL
+    ? process.env.DATABASE_URL
+    : process.env.DATABASE_URL_LOCAL,
 }));
 
 export const jwtConfig = registerAs('jwt', () => ({
