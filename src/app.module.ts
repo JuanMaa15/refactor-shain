@@ -18,10 +18,14 @@ import { DatabaseModule } from './database/database.module';
     ConfigModule.forRoot({
       isGlobal: true,
       load: [app, database, jwtConfig, cloudinaryConfig, email],
-      validationSchema,
+      validate: (config: Record<string, unknown>) =>
+        validationSchema.parse(config),
+
+      //Validacion con Joi
+      /* validationSchema,
       validationOptions: {
         abortEarly: true, // Muestra todos los errores
-      },
+      }, */
     }),
 
     // Rate Limiting
