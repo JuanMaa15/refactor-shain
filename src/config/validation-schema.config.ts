@@ -6,12 +6,12 @@ export const validationSchema = z
     NODE_ENV: z
       .enum(['development', 'production', 'test'])
       .default('development'),
-    PORT: z.number().default(3000),
+    PORT: z.coerce.number().default(3000),
     API_PREFIX: z.string().default('api'),
 
     // Database - Prisma 7
     DATABASE_URL: z.string(),
-    DATABASE_URL_DIRECT: z.string().optional(), // Para Prisma Accelerate
+    DATABASE_URL_LOCAL: z.string().optional(), // Para Prisma Accelerate
 
     // JWT
     JWT_SECRET: z.string(),
@@ -20,7 +20,7 @@ export const validationSchema = z
     JWT_REFRESH_EXPIRES_IN: z.string().default('7d'),
 
     // Security
-    SALT_ROUNDS: z.number().default(10),
+    SALT_ROUNDS: z.coerce.number().default(10),
 
     // CORS
     ALLOWED_FRONTEND_URL: z.string(),
@@ -35,10 +35,10 @@ export const validationSchema = z
     CLOUDINARY_API_SECRET: z.string(),
 
     // Rate Limiting
-    THROTTLE_TTL: z.number().default(60000),
-    THROTTLE_LIMIT: z.number().default(100),
-    THROTTLE_LOGIN_TTL: z.number().default(900000),
-    THROTTLE_LOGIN_LIMIT: z.number().default(7),
+    THROTTLE_TTL: z.coerce.number().default(60000),
+    THROTTLE_LIMIT: z.coerce.number().default(100),
+    THROTTLE_LOGIN_TTL: z.coerce.number().default(900000),
+    THROTTLE_LOGIN_LIMIT: z.coerce.number().default(7),
   })
   .refine(
     (data) =>
