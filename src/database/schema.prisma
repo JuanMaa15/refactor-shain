@@ -12,3 +12,103 @@ generator client {
 datasource db {
   provider = "postgresql"
 }
+
+enum UserRole{
+  ADMIN
+  SERVICE_PROVIDER
+  BUSSINESS_OWNER
+}
+
+model Role{
+  id String @id @default(uuid())
+  name String @unique
+  isActive Boolean
+
+  //Relaciones
+  users User[]
+
+  //Timestamp
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  @@map("roles")
+}
+
+model User {
+  id String @id @default(uuid())
+
+   // Información personal
+  name String
+  lastName String @map("last_name")
+  username String @unique
+  email String @unique
+  password String
+  phone String?
+
+  //Logica de negocio
+  isActive Boolean @default(true) @map("is_active")
+  goal Decimal @default(0) @db.Decimal(10, 2)
+ 
+  //Sistema de referidos 
+  /* referralCode String? @unique @map("referral_code")
+  referredById String? @map("referred_by") */
+
+  //Relaciones
+  role Role @relation(fields: [roleId], references: [id])
+  roleId String @unique
+
+  businessId String? @map("business_id")
+  business Business? @relation(fields: [businessId], references: [id])
+  ownedBusiness Business? @relation("BusinessOwner")
+  ResetTokens ResetToken[]
+
+  //Periodo de prueba y pago 
+  trialPeriodEndsAt DateTime? @map("trial_ends_at")
+  paymentPeriodEndsAt DateTime? @map("payment_ends_at")
+
+  //Timestamp
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+}
+
+model Business {
+  id String @id @default(uuid())
+  
+  name String?
+  goal Decimal @default(0) @db.Decimal(10, 2)
+  type String?
+  imageUrl String? @map("image_url")
+  description String?
+  businessJoinCode String @unique @map("business_join_code")
+
+  //Relaciones
+  ownerId String @unique @map("owner_id")
+  owner User @relation("BusinessOwner", fields: [ownerId], references: [id], onDelete: Cascade)
+
+  employees User[]
+
+  //Timestamp
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  @@index([businessJoinCode])
+  @@map("businesses")
+}
+
+model ResetToken {
+  id String @id @default(uuid())
+  
+  token String @unique
+  used Boolean @default(false)
+  expiresAt DateTime @map("expires_at")
+  
+  userId String @map("user_id")
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  createdAt DateTime @default(now()) @map("created_at")
+
+  @@index([token])
+  @@index([expiresAt])
+
+  @@map("reset_tokens")
+}
