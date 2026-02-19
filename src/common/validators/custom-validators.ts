@@ -5,7 +5,12 @@
  * para reducir código repetitivo en los DTOs.
  */
 
-import { ValidationOptions } from 'class-validator';
+import { Transform } from 'class-transformer';
+import {
+  registerDecorator,
+  ValidationOptions,
+  ValidationArguments,
+} from 'class-validator';
 
 /**
  * Decorador que combina IsString + Transform(trim)
@@ -20,5 +25,86 @@ import { ValidationOptions } from 'class-validator';
  * name: string;
  */
 export function IsStringTrimmed(validationOptions?: ValidationOptions) {
-  return function (object: object, propertyName: string) {};
+  return function (object: object, propertyName: string) {
+    Transform(({ value }) => (value as string)?.trim())(object, propertyName);
+
+    registerDecorator({
+      name: 'isStringTrimmed',
+      target: object.constructor,
+      propertyName,
+      options: validationOptions,
+      validator: {
+        validate(value: any) {
+          return typeof value === 'string';
+        },
+        defaultMessage(args: ValidationArguments) {
+          return `${args.property} debe ser un texto`;
+        },
+      },
+    });
+  };
+}
+
+/**
+ * Decorador que valida si contiene espacios
+ *
+ * USO:
+ * @NoWithespaces()
+ * username: string;
+ *
+ */
+export function NoWhitespaces(validationOptions?: ValidationOptions) {
+  return function (object: object, propertyName: string) {
+    registerDecorator({
+      name: 'noWhitespaces',
+      target: object.constructor,
+      propertyName,
+      options: validationOptions,
+      validator: {
+        validate(value: any) {
+          return (value as string)?.includes(' ');
+        },
+        defaultMessage(args: ValidationArguments) {
+          return `${args.property} no puede contener espacios`;
+        },
+      },
+    });
+  };
+}
+
+/**
+ * Decorador que combina IsString + Transform(trim + toLowerCase)
+ * Útil para emails, usernames, etc.
+ *
+ * USO:
+ * @IsStringLowercase()
+ * username: string;
+ *
+ * Input: "  JUANP  "
+ * Output: "juanp"
+ */
+export function IsStringLowercase(validationOptions?: ValidationOptions) {
+  return function (object: object, propertyName: string) {
+    // Transform: trim + lowercase
+    Transform(({ value }) => (value as string)?.trim().toLowerCase())(
+      object,
+      propertyName,
+    );
+
+    // Validar
+    registerDecorator({
+      name: 'isStringLowercase',
+      target: object.constructor,
+      propertyName: propertyName,
+      options: validationOptions,
+      validator: {
+        validate(value: any) {
+          return typeof value === 'string';
+        },
+        defaultMessage(args: ValidationArguments) {
+          return `${args.property} debe ser un texto`;
+        },
+      },
+    });
+  };
 }
