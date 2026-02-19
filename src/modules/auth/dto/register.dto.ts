@@ -1,10 +1,11 @@
 import {
+  IsStringLowercase,
   IsStringTrimmed,
   NoWhitespaces,
 } from '@/common/validators/custom-validators';
 import { ValidationMessages } from '@/common/validators/validation-messages';
 import { ApiProperty } from '@nestjs/swagger';
-import { IsNotEmpty, IsString, MinLength } from 'class-validator';
+import { IsEmail, IsNotEmpty, IsString, MinLength } from 'class-validator';
 
 export class RegisterDto {
   @ApiProperty({
