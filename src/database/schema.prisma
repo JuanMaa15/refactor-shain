@@ -60,7 +60,8 @@ model User {
   businessId String? @map("business_id")
   business Business? @relation(fields: [businessId], references: [id])
   ownedBusiness Business? @relation("BusinessOwner")
-  ResetTokens ResetToken[]
+  resetTokens ResetToken[]
+  refreshTokens RefreshToken[]
 
   //Periodo de prueba y pago 
   trialPeriodEndsAt DateTime? @map("trial_ends_at")
@@ -111,4 +112,23 @@ model ResetToken {
   @@index([expiresAt])
 
   @@map("reset_tokens")
+}
+
+model RefreshToken {
+  id String @id @default(uuid())
+   
+  token String @unique
+  expiresAt DateTime @map("expires_at")
+  revoked Boolean @default(false)
+  
+  userId String @map("user_id")
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  @@index([token])
+  @@index([userId])
+
+  @@map("refresh_tokens")
 }
