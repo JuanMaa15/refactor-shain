@@ -16,7 +16,7 @@ datasource db {
 enum UserRole{
   ADMIN
   SERVICE_PROVIDER
-  BUSSINESS_OWNER
+  BUSINESS_OWNER
 }
 
 model Role{
