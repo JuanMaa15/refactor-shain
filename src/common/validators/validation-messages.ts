@@ -80,4 +80,12 @@ export class ValidationMessages {
   static custom(message: string): { message: string } {
     return { message };
   }
+
+  /**
+   * Mensaje para cuando el formato del telefono no es valido
+   * @param field - campo
+   */
+  static invalidFormat(field: string): { message: string } {
+    return { message: `El formato del ${field} no es valido` };
+  }
 }
