@@ -3,7 +3,10 @@ import {
   IsStringTrimmed,
   NoWhitespaces,
 } from '@/common/validators/custom-validators';
-import { ValidationMessages } from '@/common/validators/validation-messages';
+import {
+  ValidationMessages,
+  ValidationRegex,
+} from '@/common/validators/validation-messages';
 import { UserRole } from '@/generated/prisma/enums';
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 import {
@@ -48,6 +51,10 @@ export class RegisterDto {
   @NoWhitespaces(
     ValidationMessages.custom('El username no puede contener espacios'),
   )
+  @Matches(
+    ValidationRegex.USERNAME,
+    ValidationMessages.invalidFormat('username'),
+  )
   username: string;
 
   @ApiProperty({
@@ -69,7 +76,7 @@ export class RegisterDto {
   @IsNotEmpty(ValidationMessages.isNotEmpty('contraseña'))
   @MinLength(8, ValidationMessages.minLength('contraseña', 8))
   @Matches(
-    /^(?=.*[a-zA-Z])(?=.*\d).{8,}$/,
+    ValidationRegex.PASSWORD_STRONG,
     ValidationMessages.strongPasswordFormat(),
   )
   password: string;
@@ -83,7 +90,7 @@ export class RegisterDto {
   @IsNotEmpty(ValidationMessages.isNotEmpty('Confirmación contraseña'))
   @MinLength(8, ValidationMessages.minLength('Confirmación contraseña', 8))
   @Matches(
-    /^(?=.*[a-zA-Z])(?=.*\d).{8,}$/,
+    ValidationRegex.PASSWORD_STRONG,
     ValidationMessages.strongPasswordFormat(),
   )
   confirmPassword: string;
