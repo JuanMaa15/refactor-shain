@@ -89,3 +89,54 @@ export class ValidationMessages {
     return { message: `El formato del ${field} no es valido` };
   }
 }
+
+/**
+ * REGEXES REUTILIZABLES
+ *
+ * Patrones de regex comunes para validaciones
+ */
+export class ValidationRegex {
+  /**
+   * Username: letras, números, guión, guión bajo
+   * Ejemplo: "juan-perez_123"
+   */
+  static readonly USERNAME = /^[a-zA-Z0-9_-]+$/;
+
+  /**
+   * Password básico: al menos una letra y un número
+   * Ejemplo: "password123"
+   */
+  static readonly PASSWORD_BASIC = /^(?=.*[A-Za-z])(?=.*\d)/;
+
+  /**
+   * Password fuerte: mayúscula, minúscula, número, carácter especial
+   * Ejemplo: "Password123!"
+   */
+  static readonly PASSWORD_STRONG =
+    /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&])/;
+
+  /**
+   * Solo letras (con tildes y ñ)
+   * Ejemplo: "José María"
+   */
+  static readonly ONLY_LETTERS = /^[a-zA-ZáéíóúÁÉÍÓÚñÑ\s]+$/;
+
+  /**
+   * Solo números
+   * Ejemplo: "123456"
+   */
+  static readonly ONLY_NUMBERS = /^\d+$/;
+
+  /**
+   * Teléfono (formato internacional opcional)
+   * Ejemplo: "+573001234567" o "3001234567"
+   */
+  static readonly PHONE = /^(\+)?[0-9]{10,15}$/;
+
+  /**
+   * URL
+   * Ejemplo: "https://example.com"
+   */
+  static readonly URL =
+    /^https?:\/\/(www\.)?[-a-zA-Z0-9@:%._+/~#=]{1,256}\.[a-zA-Z0-9()]{1,6}\b([-a-zA-Z0-9()@:%_+/.~#?&//=]*)$/;
+}
