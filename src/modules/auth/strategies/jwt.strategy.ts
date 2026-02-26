@@ -41,6 +41,7 @@ export class JwtStrategy extends PassportStrategy(Strategy) {
             imageUrl: true,
           },
         },
+        role: { select: { name: true } },
       },
     });
 
