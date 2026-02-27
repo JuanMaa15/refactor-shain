@@ -8,6 +8,14 @@ export class ValidationMessages {
   }
 
   /**
+   * Mensaje para validación @IsString
+   * @param field - Nombre del campo en minúsculas
+   */
+  static isUUID(field: string): { message: string } {
+    return { message: `${field} debe ser un texto` };
+  }
+
+  /**
    * Mensaje para validsación @IsNotEmpty
    * @param field - Nombre del campo en minúsculas
    */
