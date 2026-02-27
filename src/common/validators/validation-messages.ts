@@ -69,8 +69,8 @@ export class ValidationMessages {
   /**
    * Mensaje cuando las contraseñas no coinciden
    */
-  static passwordsDoNotMatch(): string {
-    return 'Las contraseñas no coinciden';
+  static passwordsDoNotMatch(): { message: string } {
+    return { message: 'Las contraseñas no coinciden' };
   }
 
   /**

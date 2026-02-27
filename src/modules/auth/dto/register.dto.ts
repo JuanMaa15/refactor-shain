@@ -1,4 +1,5 @@
 import {
+  IsEqualTo,
   IsStringLowercase,
   IsStringTrimmed,
   NoWhitespaces,
@@ -92,6 +93,7 @@ export class RegisterDto {
     ValidationRegex.PASSWORD_STRONG,
     ValidationMessages.strongPasswordFormat(),
   )
+  @IsEqualTo('password', ValidationMessages.passwordsDoNotMatch())
   confirmPassword: string;
 
   @ApiProperty({
