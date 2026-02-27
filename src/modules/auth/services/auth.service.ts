@@ -1,45 +1,40 @@
 import { PrismaService } from '@/database/prisma.service';
 import {
   BadRequestException,
-  ConflictException,
   Injectable,
   NotFoundException,
 } from '@nestjs/common';
-import { RegisterDto } from './dto';
+
 import { UserRole } from '@/generated/prisma/enums';
 import bcrypt from 'bcryptjs';
 import { addDays } from 'date-fns';
 import { User } from '@/generated/prisma/client';
+import { JwtService } from '@nestjs/jwt';
+import { ConfigService } from '@nestjs/config';
+import { RegisterDto } from '@/modules/auth/dto';
+import { AuthValidationsService } from './auth-validations.service';
 
 @Injectable()
 export class AuthService {
-  constructor(private prisma: PrismaService) {}
+  constructor(
+    private prisma: PrismaService,
+    private jwtSerfice: JwtService,
+    private configService: ConfigService,
+    private authValidationsService: AuthValidationsService,
+  ) {}
 
   async register(registerDto: RegisterDto): Promise<Omit<User, 'password'>> {
-    const { password, confirmPassword, ...restRegister } = registerDto;
+    const { password, confirmPassword: _unused, ...restRegister } = registerDto;
 
     //Validar username
-    const existingUsername = await this.prisma.user.findUnique({
-      where: { username: registerDto.username },
+    await this.authValidationsService.checkUserUniqueness('nombre de usuario', {
+      username: registerDto.username,
     });
-
-    if (existingUsername) {
-      throw new ConflictException('El nombre de usuario ya está en uso.');
-    }
 
     //Validar email
-    const existingEmail = await this.prisma.user.findUnique({
-      where: { email: registerDto.email },
+    await this.authValidationsService.checkUserUniqueness('email', {
+      email: registerDto.email,
     });
-
-    if (existingEmail) {
-      throw new ConflictException('El correo electrónico ya está en uso.');
-    }
-
-    //Validar password
-    if (password !== confirmPassword) {
-      throw new BadRequestException('Las contraseñas no coinciden.');
-    }
 
     //Validar si existe el codigo del negocio si es prestador de servicio
     const role = await this.prisma.role.findUnique({
@@ -87,6 +82,34 @@ export class AuthService {
       },
     });
 
-    return user;
+    //Si es un propietario de negocio, crear un negocio
+    if (role.name === UserRole.BUSINESS_OWNER) {
+      const businessJoinCode = this.generateBusinessCode();
+
+      const newBusiness = await this.prisma.business.create({
+        data: {
+          businessJoinCode,
+          goal: 0, // Meta inicial en 0
+          ownerId: user.id,
+        },
+      });
+
+      const updatedUser = await this.prisma.user.update({
+        where: { id: user.id },
+        data: { businessId: newBusiness.id },
+      });
+      user.businessId = updatedUser.businessId;
+    }
+
+    const { password: _, ...userWhitouthPassword } = user;
+
+    return userWhitouthPassword;
+  }
+
+  private generateBusinessCode(): string {
+    return (
+      Math.random().toString(36).substring(2, 15) +
+      Math.random().toString(36).substring(2, 15)
+    );
   }
 }
