@@ -7,14 +7,13 @@ import {
   ValidationMessages,
   ValidationRegex,
 } from '@/common/validators/validation-messages';
-import { UserRole } from '@/generated/prisma/enums';
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 import {
   IsEmail,
-  IsEnum,
   IsNotEmpty,
   IsOptional,
   IsString,
+  IsUUID,
   Matches,
   MinLength,
 } from 'class-validator';
@@ -96,12 +95,12 @@ export class RegisterDto {
   confirmPassword: string;
 
   @ApiProperty({
-    description: 'Rol del usuario',
-    example: UserRole.BUSINESS_OWNER,
+    description: 'ID del rol del usuario',
+    example: 'd4f7a3b9c2e1',
   })
-  @IsEnum(UserRole, ValidationMessages.isEnum('role'))
-  @IsNotEmpty(ValidationMessages.isNotEmpty('role'))
-  role: string;
+  @IsUUID('4', ValidationMessages.isUUID('rol'))
+  @IsNotEmpty(ValidationMessages.isNotEmpty('rol'))
+  roleId: string;
 
   @ApiPropertyOptional({
     description: 'Número de teléfono (opcional)',
