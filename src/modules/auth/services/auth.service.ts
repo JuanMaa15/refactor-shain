@@ -11,11 +11,16 @@ import bcrypt from 'bcryptjs';
 import { addDays } from 'date-fns';
 import { JwtService } from '@nestjs/jwt';
 import { ConfigService } from '@nestjs/config';
-import { RegisterDto } from '@/modules/auth/dto';
+import {
+  ForgotPasswordDto,
+  RegisterDto,
+  ResetPasswordDto,
+} from '@/modules/auth/dto';
 import { AuthValidationsService } from './auth-validations.service';
 import { UserWithoutSensitive } from '@/modules/auth/interfaces';
 import { Response } from 'express';
 import { setAuthTokens } from '@/common/utils/cookies.util';
+import crypto from 'crypto';
 
 interface UserWithDetails extends UserWithoutSensitive {
   Business?: {
@@ -234,5 +239,70 @@ export class AuthService {
     setAuthTokens({ res, accessToken, refreshToken, isProduction, domain }); //Configuración de cookies de autenticación de forma segura (httpOnly, secure, sameSite, domain, path, etc) y seteo de cookies res, accessToken, refreshToken, isProduction, domain);
 
     return user;
+  }
+
+  async forgotPassword(forgotPasswordDto: ForgotPasswordDto): Promise<void> {
+    const { email } = forgotPasswordDto;
+
+    const user = await this.prisma.user.findUnique({
+      where: { email },
+    });
+
+    if (!user) {
+      return; // No revelar que el email no existe (seguridad)
+    }
+
+    const resetToken = this.generateSecureToken();
+    const expiresAt = new Date(Date.now() + 15 * 60 * 1000); // 15 min
+
+    await this.prisma.resetToken.create({
+      data: {
+        token: resetToken,
+        userId: user.id,
+        used: false,
+        expiresAt,
+      },
+    });
+  }
+
+  async resetPassword(resetPasswordDto: ResetPasswordDto): Promise<void> {
+    const { token, password } = resetPasswordDto;
+
+    const resetToken = await this.prisma.resetToken.findUnique({
+      where: { token },
+    });
+
+    if (!resetToken || resetToken.used) {
+      throw new BadRequestException('Token inválido o ya usado');
+    }
+
+    if (new Date() > resetToken.expiresAt) {
+      throw new BadRequestException('El token ha expirado');
+    }
+
+    const hashedPassword = await bcrypt.hash(password, 10);
+
+    await this.prisma.user.update({
+      where: { id: resetToken.userId },
+      data: { password: hashedPassword },
+    });
+
+    await this.prisma.resetToken.update({
+      where: { id: resetToken.id },
+      data: { used: true },
+    });
+
+    // Revocar todos los refresh tokens (seguridad)
+    await this.prisma.refreshToken.updateMany({
+      where: { userId: resetToken.userId },
+      data: { revoked: true },
+    });
+  }
+
+  /**
+   * UTILIDAD: Generar token seguro
+   */
+  private generateSecureToken(): string {
+    return crypto.randomBytes(32).toString('hex');
   }
 }
