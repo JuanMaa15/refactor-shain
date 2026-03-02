@@ -52,5 +52,5 @@ export const email = registerAs('email', () => ({
 }));
 
 export const cookie = registerAs('cookie', () => ({
-  cookieDomain: process.env.COOKIE_DOMAIN || 'use2.devtunnels.ms',
+  domain: process.env.COOKIE_DOMAIN || 'use2.devtunnels.ms',
 }));
