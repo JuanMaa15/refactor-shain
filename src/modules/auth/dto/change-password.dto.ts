@@ -42,8 +42,6 @@ export class ChangePasswordDto {
   })
   @IsString(ValidationMessages.isString('contraseña'))
   @IsNotEmpty(ValidationMessages.isNotEmpty('contraseña'))
-  @IsEqualTo('password', {
-    message: ValidationMessages.passwordsDoNotMatch(),
-  })
+  @IsEqualTo('password', ValidationMessages.passwordsDoNotMatch())
   confirmPassword: string;
 }
