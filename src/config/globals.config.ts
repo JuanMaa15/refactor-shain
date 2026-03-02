@@ -50,3 +50,7 @@ export const email = registerAs('email', () => ({
     from: process.env.RESEND_EMAIL || 'noreply@shain.finance',
   },
 }));
+
+export const cookie = registerAs('cookie', () => ({
+  cookieDomain: process.env.COOKIE_DOMAIN || 'use2.devtunnels.ms',
+}));

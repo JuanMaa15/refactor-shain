@@ -4,6 +4,7 @@ import { validationSchema } from './config/validation-schema.config';
 import {
   app,
   cloudinaryConfig,
+  cookie,
   database,
   email,
   jwtConfig,
@@ -15,7 +16,7 @@ import { DatabaseModule } from './database/database.module';
   imports: [
     ConfigModule.forRoot({
       isGlobal: true,
-      load: [app, database, jwtConfig, cloudinaryConfig, email],
+      load: [app, database, jwtConfig, cloudinaryConfig, email, cookie],
       validate: (config: Record<string, unknown>) =>
         validationSchema.parse(config),
 

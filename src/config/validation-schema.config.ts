@@ -39,6 +39,9 @@ export const validationSchema = z
     THROTTLE_LIMIT: z.coerce.number().default(100),
     THROTTLE_LOGIN_TTL: z.coerce.number().default(900000),
     THROTTLE_LOGIN_LIMIT: z.coerce.number().default(7),
+
+    // Cookies
+    COOKIE_DOMAIN: z.string().default('use2.devtunnels.ms'),
   })
   .refine(
     (data) =>
