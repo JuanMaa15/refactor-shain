@@ -12,6 +12,7 @@ import { addDays } from 'date-fns';
 import { JwtService } from '@nestjs/jwt';
 import { ConfigService } from '@nestjs/config';
 import {
+  ChangePasswordDto,
   ForgotPasswordDto,
   RegisterDto,
   ResetPasswordDto,
@@ -19,7 +20,7 @@ import {
 import { AuthValidationsService } from './auth-validations.service';
 import { UserWithoutSensitive } from '@/modules/auth/interfaces';
 import { Response } from 'express';
-import { setAuthTokens } from '@/common/utils/cookies.util';
+import { clearAuthTokens, setAuthTokens } from '@/common/utils/cookies.util';
 import crypto from 'crypto';
 
 interface UserWithDetails extends UserWithoutSensitive {
@@ -299,10 +300,76 @@ export class AuthService {
     });
   }
 
+  async changePassword(
+    userId: string,
+    changePasswordDto: ChangePasswordDto,
+  ): Promise<void> {
+    const { currentPassword, password, confirmPassword } = changePasswordDto;
+
+    const user = await this.prisma.user.findUnique({
+      where: { id: userId },
+    });
+
+    if (!user) {
+      throw new NotFoundException('Usuario no encontrado');
+    }
+
+    const isCurrentPasswordValid = await bcrypt.compare(
+      currentPassword,
+      user.password,
+    );
+
+    if (!isCurrentPasswordValid) {
+      throw new BadRequestException('La contraseña actual es incorrecta');
+    }
+
+    if (password !== confirmPassword) {
+      throw new BadRequestException('Las contraseñas no coinciden');
+    }
+
+    const isSamePassword = await bcrypt.compare(password, user.password);
+
+    if (isSamePassword) {
+      throw new BadRequestException(
+        'La nueva contraseña debe ser diferente a la actual',
+      );
+    }
+
+    const hashedPassword = await bcrypt.hash(password, 10);
+
+    await this.prisma.user.update({
+      where: { id: userId },
+      data: { password: hashedPassword },
+    });
+
+    // Revocar todos los refresh tokens
+    await this.prisma.refreshToken.updateMany({
+      where: { userId },
+      data: { revoked: true },
+    });
+  }
+
   /**
    * UTILIDAD: Generar token seguro
    */
   private generateSecureToken(): string {
     return crypto.randomBytes(32).toString('hex');
+  }
+
+  /**
+   * LOGOUT - Cerrar sesión
+   */
+  async logout(refreshToken: string, res: Response): Promise<void> {
+    // Revocar refresh token en DB
+    if (refreshToken) {
+      await this.prisma.refreshToken.updateMany({
+        where: { token: refreshToken },
+        data: { revoked: true },
+      });
+    }
+
+    // Limpiar cookies
+    const domain = this.configService.get<string>('COOKIE_DOMAIN');
+    clearAuthTokens(res, domain);
   }
 }
