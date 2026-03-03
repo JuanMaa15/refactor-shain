@@ -23,12 +23,12 @@ import { Response } from 'express';
 import { clearAuthTokens, setAuthTokens } from '@/common/utils/cookies.util';
 import crypto from 'crypto';
 
-interface UserWithDetails extends UserWithoutSensitive {
-  Business?: {
+export interface UserWithDetails extends UserWithoutSensitive {
+  business?: {
     id: string;
-    name: string;
-    imageUrl: string;
-  };
+    name: string | null;
+    imageUrl: string | null;
+  } | null;
   role: {
     name: string;
   };
@@ -240,6 +240,78 @@ export class AuthService {
     setAuthTokens({ res, accessToken, refreshToken, isProduction, domain }); //Configuración de cookies de autenticación de forma segura (httpOnly, secure, sameSite, domain, path, etc) y seteo de cookies res, accessToken, refreshToken, isProduction, domain);
 
     return user;
+  }
+
+  async refreshAccessToken(
+    userId: string,
+    refreshToken: string,
+    res: Response,
+  ): Promise<string> {
+    // ← Cambiar void a string
+    const tokenRecord = await this.prisma.refreshToken.findUnique({
+      where: { token: refreshToken },
+    });
+
+    if (!tokenRecord) {
+      throw new UnauthorizedException('Refresh token inválido');
+    }
+
+    if (tokenRecord.revoked) {
+      throw new UnauthorizedException(
+        'Refresh token revocado. Por favor, inicia sesión nuevamente.',
+      );
+    }
+
+    if (new Date() > tokenRecord.expiresAt) {
+      throw new UnauthorizedException('Refresh token expirado');
+    }
+
+    const user = await this.prisma.user.findUnique({
+      where: { id: userId },
+      include: {
+        role: {
+          select: {
+            id: true,
+            name: true,
+          },
+        },
+      },
+    });
+
+    if (!user) {
+      throw new UnauthorizedException('Usuario no encontrado');
+    }
+
+    if (!user.isActive) {
+      throw new UnauthorizedException('Usuario inactivo');
+    }
+
+    const newAccessToken = await this.jwtService.signAsync(
+      {
+        userId: user.id,
+        username: user.username,
+        role: user.role.name,
+      },
+      {
+        secret: this.configService.get<string>('jwt.secret'),
+        expiresIn:
+          (this.configService.get<string>('jwt.expiresIn') as '15m') ?? '15m',
+      },
+    );
+
+    const isProduction = this.configService.get('NODE_ENV') === 'production';
+    const domain = this.configService.get<string>('cookie.domain');
+
+    res.cookie('token_shain', newAccessToken, {
+      httpOnly: true,
+      secure: isProduction,
+      sameSite: isProduction ? 'lax' : 'strict',
+      maxAge: 15 * 60 * 1000,
+      domain,
+      path: '/',
+    });
+
+    return newAccessToken; // ← AGREGAR ESTE RETURN
   }
 
   async forgotPassword(forgotPasswordDto: ForgotPasswordDto): Promise<void> {
