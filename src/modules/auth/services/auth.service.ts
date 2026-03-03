@@ -369,7 +369,7 @@ export class AuthService {
     }
 
     // Limpiar cookies
-    const domain = this.configService.get<string>('COOKIE_DOMAIN');
+    const domain = this.configService.get<string>('cookie.domain');
     clearAuthTokens(res, domain);
   }
 }
