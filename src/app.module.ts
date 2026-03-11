@@ -13,6 +13,8 @@ import { ThrottlerModule } from '@nestjs/throttler';
 import { DatabaseModule } from './database/database.module';
 import { AuthModule } from './modules/auth/auth.module';
 import { UserModule } from './modules/user/user.module';
+import { BusinessModule } from './modules/business/business.module';
+import { CloudinaryModule } from './modules/storage/cloudinary.module';
 
 @Module({
   imports: [
@@ -49,6 +51,8 @@ import { UserModule } from './modules/user/user.module';
     // Módulos
     AuthModule,
     UserModule,
+    BusinessModule,
+    CloudinaryModule,
   ],
   controllers: [],
   providers: [],
