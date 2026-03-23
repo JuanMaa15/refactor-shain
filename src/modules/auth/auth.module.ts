@@ -12,6 +12,7 @@ import { AuthRepository } from './auth.repository';
 import { LocalStrategy } from './strategies/local.strategy';
 import { JwtStrategy } from './strategies/jwt.strategy';
 import { JwtRefreshStrategy } from './strategies/jwt-refresh.strategy';
+import { BusinessModule } from '@/modules/business/business.module';
 
 @Module({
   imports: [
@@ -27,6 +28,7 @@ import { JwtRefreshStrategy } from './strategies/jwt-refresh.strategy';
         },
       }),
     }),
+    BusinessModule,
   ],
   controllers: [AuthController],
   providers: [

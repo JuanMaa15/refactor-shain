@@ -22,6 +22,7 @@ import { UserWithoutSensitive } from '@/modules/auth/interfaces';
 import { Response } from 'express';
 import { clearAuthTokens, setAuthTokens } from '@/common/utils/cookies.util';
 import crypto from 'crypto';
+import { BusinessService } from '@/modules/business/business.service';
 
 export interface UserWithDetails extends UserWithoutSensitive {
   business?: {
@@ -41,6 +42,7 @@ export class AuthService {
     private jwtService: JwtService,
     private configService: ConfigService,
     private authValidationsService: AuthValidationsService,
+    private businessService: BusinessService,
   ) {}
 
   async register(registerDto: RegisterDto): Promise<UserWithoutSensitive> {
@@ -72,9 +74,9 @@ export class AuthService {
         throw new BadRequestException('El codigo del negocio es requerido.');
       }
 
-      const business = await this.prisma.business.findUnique({
-        where: { businessJoinCode: registerDto.businessCode },
-      });
+      const business = await this.businessService.findByJoinCode(
+        registerDto.businessCode,
+      );
 
       if (!business) {
         throw new NotFoundException('El codigo del negocio no existe.');
@@ -106,12 +108,9 @@ export class AuthService {
     if (role.name === UserRole.BUSINESS_OWNER) {
       const businessJoinCode = this.generateBusinessCode();
 
-      const newBusiness = await this.prisma.business.create({
-        data: {
-          businessJoinCode,
-          goal: 0, // Meta inicial en 0
-          ownerId: user.id,
-        },
+      const newBusiness = await this.businessService.createBusiness({
+        ownerId: user.id,
+        businessJoinCode,
       });
 
       const updatedUser = await this.prisma.user.update({
