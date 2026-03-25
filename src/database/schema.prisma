@@ -19,6 +19,16 @@ enum UserRole{
   BUSINESS_OWNER
 }
 
+enum MovementType {
+  INCOME   // ingreso
+  EXPENSE  // egreso
+}
+ 
+enum FrequencyType {
+  NEW        // nuevo
+  RECURRING  // recurrente
+}
+
 model Role{
   id String @id @default(uuid())
   name String @unique
@@ -57,11 +67,14 @@ model User {
   role Role @relation(fields: [roleId], references: [id])
   roleId String @unique
 
+  
+
   businessId String? @map("business_id")
   business Business? @relation(fields: [businessId], references: [id])
   ownedBusiness Business? @relation("BusinessOwner")
   resetTokens ResetToken[]
   refreshTokens RefreshToken[]
+  movements Movement[]
 
   //Periodo de prueba y pago 
   trialPeriodEndsAt DateTime? @map("trial_ends_at")
@@ -87,6 +100,7 @@ model Business {
   owner User @relation("BusinessOwner", fields: [ownerId], references: [id], onDelete: Cascade)
 
   employees User[]
+  movements Movement[]
 
   //Timestamp
   createdAt DateTime @default(now()) @map("created_at")
@@ -131,4 +145,33 @@ model RefreshToken {
   @@index([userId])
 
   @@map("refresh_tokens")
+}
+
+model Movement {
+  id          String        @id @default(uuid())
+ 
+  type        MovementType
+  frequency   FrequencyType?
+  value       Decimal       @db.Decimal(12, 2)
+  description String?       
+  date        DateTime      @db.Date
+
+  // Relaciones
+  userId      String        @map("user_id")
+  user        User          @relation(fields: [userId], references: [id], onDelete: Cascade)
+ 
+  businessId  String        @map("business_id")
+  business    Business      @relation(fields: [businessId], references: [id], onDelete: Cascade)
+ 
+  // Timestamps
+  createdAt   DateTime      @default(now()) @map("created_at")
+  updatedAt   DateTime      @updatedAt      @map("updated_at")
+
+  @@index([userId])
+  @@index([businessId])
+  @@index([userId, date])       // Cubre: resumen diario/mensual por usuario
+  @@index([businessId, date])   // Cubre: resumen diario/mensual por negocio
+  @@index([date])               // Cubre: queries globales por fecha
+ 
+  @@map("movements")
 }
