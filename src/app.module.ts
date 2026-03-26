@@ -15,6 +15,7 @@ import { AuthModule } from './modules/auth/auth.module';
 import { UserModule } from './modules/user/user.module';
 import { BusinessModule } from './modules/business/business.module';
 import { CloudinaryModule } from './modules/storage/cloudinary.module';
+import { MovementsModule } from './modules/movements/movement.module';
 
 @Module({
   imports: [
@@ -53,6 +54,7 @@ import { CloudinaryModule } from './modules/storage/cloudinary.module';
     UserModule,
     BusinessModule,
     CloudinaryModule,
+    MovementsModule,
   ],
   controllers: [],
   providers: [],
