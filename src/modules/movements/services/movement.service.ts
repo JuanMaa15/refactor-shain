@@ -16,7 +16,7 @@ import {
   PublicMovement,
   TransactionTotals,
 } from '@modules/movements/interfaces';
-import { buildDateFilter, getLastDaysRange } from './movement-date.util';
+import { buildDateFilter, getLastDaysRange } from '../movement-date.util';
 
 @Injectable()
 export class MovementService {
