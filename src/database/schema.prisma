@@ -19,6 +19,12 @@ enum UserRole{
   BUSINESS_OWNER
 }
 
+enum BookingStatus {
+  PENDING     // pendiente
+  IN_PROGRESS // en proceso
+  DONE        // terminado
+}
+
 enum MovementType {
   INCOME   // ingreso
   EXPENSE  // egreso
@@ -75,6 +81,7 @@ model User {
   resetTokens ResetToken[]
   refreshTokens RefreshToken[]
   movements Movement[]
+  bookings Booking[]
 
   //Periodo de prueba y pago 
   trialPeriodEndsAt DateTime? @map("trial_ends_at")
@@ -174,4 +181,49 @@ model Movement {
   @@index([date])               // Cubre: queries globales por fecha
  
   @@map("movements")
+}
+
+model TimeSlot {
+  id        String   @id @default(uuid())
+
+  hour      String                        // "08:00", "09:00", etc.
+  isActive  Boolean  @default(true)       @map("is_active")
+
+  // Relaciones
+  bookings  Booking[]
+
+  // Timestamps
+  createdAt DateTime @default(now())      @map("created_at")
+  updatedAt DateTime @updatedAt           @map("updated_at")
+
+  @@map("time_slots")
+}
+
+model Booking {
+  id           String        @id @default(uuid())
+
+  date         DateTime      @db.Date
+  customerName String?       @map("customer_name")
+  description  String?
+  status       BookingStatus @default(PENDING)
+
+  // Relaciones
+  userId       String        @map("user_id")
+  user         User          @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  timeSlotId   String        @map("time_slot_id")
+  timeSlot     TimeSlot      @relation(fields: [timeSlotId], references: [id])
+
+  // Timestamps
+  createdAt    DateTime      @default(now()) @map("created_at")
+  updatedAt    DateTime      @updatedAt      @map("updated_at")
+
+  // Un usuario no puede reservar el mismo slot dos veces en el mismo día
+  @@unique([date, timeSlotId, userId])
+
+  @@index([userId])
+  @@index([userId, date])     // Cubre: consultas de disponibilidad y listados por día
+  @@index([timeSlotId])
+
+  @@map("bookings")
 }
