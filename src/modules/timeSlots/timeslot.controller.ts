@@ -32,7 +32,7 @@ import {
 @ApiCookieAuth('token_shain')
 @Controller('timeslots')
 export class TimeSlotController {
-  constructor(private readonly TimeSlotService: TimeSlotService) {}
+  constructor(private readonly timeSlotService: TimeSlotService) {}
 
   // GET /timeslots/available?date=YYYY-MM-DD
   // Respeta el contrato original: SERVICE_PROVIDER y BUSINESS_OWNER pueden consultar
@@ -49,7 +49,7 @@ export class TimeSlotController {
     @Query() query: GetAvailableHoursDto,
     @CurrentUser() user: CurrentUserInterface,
   ) {
-    const hours = await this.TimeSlotService.getAvailableHours(query, user.id);
+    const hours = await this.timeSlotService.getAvailableHours(query, user.id);
 
     return {
       status: 'success',
@@ -68,7 +68,7 @@ export class TimeSlotController {
   })
   @ApiResponse({ status: 200, description: 'Listado de franjas horarias' })
   async findAll() {
-    const timeSlots = await this.TimeSlotService.findAllActive();
+    const timeSlots = await this.timeSlotService.findAllActive();
 
     return {
       status: 'success',
@@ -85,7 +85,7 @@ export class TimeSlotController {
   @ApiOperation({ summary: '[ADMIN] Crear franja horaria' })
   @ApiResponse({ status: 201, description: 'Franja horaria creada' })
   async create(@Body() dto: CreateTimeSlotDto) {
-    const timeSlot = await this.TimeSlotService.create(dto);
+    const timeSlot = await this.timeSlotService.create(dto);
 
     return {
       status: 'success',
@@ -106,7 +106,7 @@ export class TimeSlotController {
     @Param('id', ParseUUIDPipe) id: string,
     @Body() dto: UpdateTimeSlotDto,
   ) {
-    const timeSlot = await this.TimeSlotService.update(id, dto);
+    const timeSlot = await this.timeSlotService.update(id, dto);
 
     return {
       status: 'success',
