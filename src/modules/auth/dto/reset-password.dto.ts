@@ -34,7 +34,7 @@ export class ResetPasswordDto {
   @IsNotEmpty(ValidationMessages.isNotEmpty('contraseña'))
   @MinLength(8, ValidationMessages.minLength('contraseña', 8))
   @Matches(
-    ValidationRegex.PASSWORD_STRONG,
+    ValidationRegex.PASSWORD_BASIC,
     ValidationMessages.strongPasswordFormat(),
   )
   password: string;

@@ -76,7 +76,7 @@ export class RegisterDto {
   @IsNotEmpty(ValidationMessages.isNotEmpty('contraseña'))
   @MinLength(8, ValidationMessages.minLength('contraseña', 8))
   @Matches(
-    ValidationRegex.PASSWORD_STRONG,
+    ValidationRegex.PASSWORD_BASIC,
     ValidationMessages.strongPasswordFormat(),
   )
   password: string;
@@ -90,7 +90,7 @@ export class RegisterDto {
   @IsNotEmpty(ValidationMessages.isNotEmpty('Confirmación contraseña'))
   @MinLength(8, ValidationMessages.minLength('Confirmación contraseña', 8))
   @Matches(
-    ValidationRegex.PASSWORD_STRONG,
+    ValidationRegex.PASSWORD_BASIC,
     ValidationMessages.strongPasswordFormat(),
   )
   @IsEqualTo('password', ValidationMessages.passwordsDoNotMatch())
@@ -98,7 +98,7 @@ export class RegisterDto {
 
   @ApiProperty({
     description: 'ID del rol del usuario',
-    example: 'd4f7a3b9c2e1',
+    example: 'a1b2c3d4-e5f6-4a7b-8c9d-0e1f2a3b4c5d',
   })
   @IsUUID('4', ValidationMessages.isUUID('rol'))
   @IsNotEmpty(ValidationMessages.isNotEmpty('rol'))
