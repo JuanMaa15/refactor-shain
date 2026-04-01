@@ -1,3 +1,4 @@
+import express from 'express';
 import { NestFactory } from '@nestjs/core';
 import { AppModule } from './app.module';
 import helmet from 'helmet';
@@ -29,6 +30,11 @@ async function bootstrap() {
     methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
     allowedHeaders: ['Content-Type', 'Authorization'],
   });
+
+  app.use(
+    '/api/v1/transactions/webhook',
+    express.raw({ type: 'application/json' }),
+  );
 
   //GLOBAL PREFIX
   const apiPrefix = configService.get('app.apiPrefix') as string;

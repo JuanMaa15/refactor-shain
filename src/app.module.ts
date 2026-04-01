@@ -8,6 +8,7 @@ import {
   database,
   email,
   jwtConfig,
+  payments,
 } from './config/globals.config';
 import { ThrottlerModule } from '@nestjs/throttler';
 import { DatabaseModule } from './database/database.module';
@@ -19,12 +20,23 @@ import { MovementsModule } from './modules/movements/movement.module';
 import { RoleModule } from './modules/role/role.module';
 import { TimeSlotModule } from '@/modules/timeSlots/timeslot.module';
 import { BookingModule } from '@/modules/booking/booking.module';
+import { PaymentsModule } from '@/modules/payments/payments.module';
+import { PlansModule } from '@/modules/plans/plans.module';
+import { OrdersModule } from '@/modules/orders/orders.module';
 
 @Module({
   imports: [
     ConfigModule.forRoot({
       isGlobal: true,
-      load: [app, database, jwtConfig, cloudinaryConfig, email, cookie],
+      load: [
+        app,
+        database,
+        jwtConfig,
+        cloudinaryConfig,
+        email,
+        payments,
+        cookie,
+      ],
       validate: (config: Record<string, unknown>) =>
         validationSchema.parse(config),
 
@@ -61,6 +73,9 @@ import { BookingModule } from '@/modules/booking/booking.module';
     TimeSlotModule,
     BookingModule,
     RoleModule,
+    PlansModule,
+    OrdersModule,
+    PaymentsModule,
   ],
   controllers: [],
   providers: [],
