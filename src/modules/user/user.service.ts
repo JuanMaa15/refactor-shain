@@ -29,6 +29,18 @@ export class UserService {
     return user as UserWithRelations;
   }
 
+  async findAll(): Promise<PublicUser[]> {
+    const users = await this.prisma.user.findMany({
+      omit: { password: true },
+      include: {
+        role: { select: { id: true, name: true } },
+      },
+      orderBy: { createdAt: 'asc' },
+    });
+
+    return users as PublicUser[];
+  }
+
   async findByBusiness(businessId: string): Promise<PublicUser[]> {
     //Validar si existe el negocio
     const business = await this.prisma.business.findUnique({

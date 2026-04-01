@@ -95,6 +95,21 @@ export class UserController {
     };
   }
 
+  @Get()
+  @UseGuards(RolesGuard)
+  @Roles(UserRole.ADMIN)
+  @HttpCode(HttpStatus.OK)
+  @ApiOperation({ summary: '[ADMIN] Listar todos los usuarios' })
+  @ApiResponse({ status: 200, description: 'Lista de todos los usuarios' })
+  async findAll() {
+    const users = await this.userService.findAll();
+
+    return {
+      status: 'success',
+      data: users,
+    };
+  }
+
   @Get(':id')
   @UseGuards(RolesGuard)
   @Roles(UserRole.ADMIN)
