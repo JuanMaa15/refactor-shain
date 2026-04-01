@@ -51,6 +51,12 @@ export const email = registerAs('email', () => ({
   },
 }));
 
+export const payments = registerAs('payments', () => ({
+  wompi: {
+    webhookSecret: process.env.WOMPI_WEBHOOK_SECRET,
+  },
+}));
+
 export const cookie = registerAs('cookie', () => ({
   domain: process.env.COOKIE_DOMAIN || 'use2.devtunnels.ms',
 }));

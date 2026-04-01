@@ -28,6 +28,7 @@ export const validationSchema = z
     // Email
     RESEND_API_KEY: z.string().optional(),
     RESEND_EMAIL: z.email(),
+    WOMPI_WEBHOOK_SECRET: z.string().optional(),
 
     // Cloudinary
     CLOUDINARY_CLOUD_NAME: z.string(),
@@ -49,5 +50,13 @@ export const validationSchema = z
     {
       message: 'RESEND_API_KEY is required in production',
       path: ['RESEND_API_KEY'],
+    },
+  )
+  .refine(
+    (data) =>
+      data.NODE_ENV !== 'production' || data.WOMPI_WEBHOOK_SECRET !== undefined,
+    {
+      message: 'WOMPI_WEBHOOK_SECRET is required in production',
+      path: ['WOMPI_WEBHOOK_SECRET'],
     },
   );
