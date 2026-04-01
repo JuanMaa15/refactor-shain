@@ -16,6 +16,7 @@ import { UserModule } from './modules/user/user.module';
 import { BusinessModule } from './modules/business/business.module';
 import { CloudinaryModule } from './modules/storage/cloudinary.module';
 import { MovementsModule } from './modules/movements/movement.module';
+import { RoleModule } from './modules/role/role.module';
 import { TimeSlotModule } from '@/modules/timeSlots/timeslot.module';
 import { BookingModule } from '@/modules/booking/booking.module';
 
@@ -59,6 +60,7 @@ import { BookingModule } from '@/modules/booking/booking.module';
     MovementsModule,
     TimeSlotModule,
     BookingModule,
+    RoleModule,
   ],
   controllers: [],
   providers: [],
