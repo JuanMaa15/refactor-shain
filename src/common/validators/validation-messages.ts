@@ -61,8 +61,7 @@ export class ValidationMessages {
    */
   static strongPasswordFormat(): { message: string } {
     return {
-      message:
-        'La contraseña debe contener al menos una letra mayúscula, una minúscula, un número y un carácter especial',
+      message: 'La contraseña debe contener al menos una letra y un número',
     };
   }
 

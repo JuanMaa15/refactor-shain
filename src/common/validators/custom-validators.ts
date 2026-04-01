@@ -62,7 +62,7 @@ export function NoWhitespaces(validationOptions?: ValidationOptions) {
       options: validationOptions,
       validator: {
         validate(value: any) {
-          return (value as string)?.includes(' ');
+          return !(value as string)?.includes(' ');
         },
         defaultMessage(args: ValidationArguments) {
           return `${args.property} no puede contener espacios`;
@@ -136,7 +136,7 @@ export function IsEqualTo(
           const relatedValue = (args.object as Record<string, unknown>)[
             relatedPropertyName
           ];
-          return typeof value === relatedValue;
+          return value === relatedValue;
         },
         defaultMessage(args: ValidationArguments) {
           const [relatedPropertyName] = args.constraints as string[];
