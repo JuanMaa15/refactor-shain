@@ -1,6 +1,7 @@
 import {
   Body,
   Controller,
+  ForbiddenException,
   Get,
   HttpCode,
   HttpStatus,
@@ -112,13 +113,27 @@ export class UserController {
 
   @Get(':id')
   @UseGuards(RolesGuard)
-  @Roles(UserRole.ADMIN)
+  @Roles(UserRole.ADMIN, UserRole.BUSINESS_OWNER)
   @HttpCode(HttpStatus.OK)
-  @ApiOperation({ summary: '[ADMIN] Obtener un usuario por ID' })
+  @ApiOperation({ summary: '[ADMIN|BUSINESS_OWNER] Obtener un usuario por ID' })
   @ApiResponse({ status: 200, description: 'Datos del usuario' })
+  @ApiResponse({ status: 401, description: 'No autorizado' })
+  @ApiResponse({ status: 403, description: 'Acceso prohibido' })
   @ApiResponse({ status: 404, description: 'Usuario no encontrado' })
-  async findOne(@Param('id', ParseUUIDPipe) id: string) {
+  async findOne(
+    @CurrentUser() currentUser: CurrentUserInterface,
+    @Param('id', ParseUUIDPipe) id: string,
+  ) {
     const user = await this.userService.findOneById(id);
+
+    if (currentUser.role.name === UserRole.BUSINESS_OWNER) {
+      if (
+        !currentUser.businessId ||
+        user.businessId !== currentUser.businessId
+      ) {
+        throw new ForbiddenException('No tienes permiso para ver este usuario');
+      }
+    }
 
     return {
       status: 'success',
