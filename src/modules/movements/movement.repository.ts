@@ -94,7 +94,7 @@ export class MovementRepository {
         type,
         SUM(value)::float AS value
       FROM movements
-      WHERE business_id = ${businessId}::uuid
+      WHERE business_id = ${businessId}::text
         ${typeCondition}
         ${dateCondition}
       GROUP BY date, type
