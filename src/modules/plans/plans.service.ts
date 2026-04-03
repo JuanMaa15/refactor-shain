@@ -1,80 +1,54 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
 import { PrismaService } from '@/database/prisma.service';
-import { CreatePlanDto } from './dto/create-plan.dto';
-import { UpdatePlanDto } from './dto/update-plan.dto';
+import { CreatePlanDto } from '@/modules/plans/dto/create-plan.dto';
+import { UpdatePlanDto } from '@/modules/plans/dto/update-plan.dto';
 import { Plan } from '@/generated/prisma/client';
 
 @Injectable()
 export class PlansService {
   constructor(private readonly prisma: PrismaService) {}
 
-  async create(createPlanDto: CreatePlanDto): Promise<Plan> {
-    const total = Number(createPlanDto.pricePerUser) * createPlanDto.maxUsers;
-
+  async create(dto: CreatePlanDto): Promise<Plan> {
+    const total = Number(dto.pricePerUser) * dto.maxUsers;
     return this.prisma.plan.create({
       data: {
-        name: createPlanDto.name,
-        type: createPlanDto.type,
-        pricePerUser: createPlanDto.pricePerUser,
-        maxUsers: createPlanDto.maxUsers,
+        name: dto.name,
+        type: dto.type,
+        pricePerUser: dto.pricePerUser,
+        maxUsers: dto.maxUsers,
         total,
-        isActive: createPlanDto.isActive ?? true,
+        isActive: dto.isActive ?? true,
       },
     });
   }
 
   async findAll(): Promise<Plan[]> {
+    return this.prisma.plan.findMany({ orderBy: { name: 'asc' } });
+  }
+
+  async findAllActive(): Promise<Plan[]> {
     return this.prisma.plan.findMany({
+      where: { isActive: true },
       orderBy: { name: 'asc' },
     });
   }
 
   async findOne(id: string): Promise<Plan> {
-    const plan = await this.prisma.plan.findUnique({
-      where: { id },
-    });
-
-    if (!plan) {
-      throw new NotFoundException('Plan no encontrado');
-    }
-
+    const plan = await this.prisma.plan.findUnique({ where: { id } });
+    if (!plan) throw new NotFoundException('Plan no encontrado');
     return plan;
   }
 
-  async update(id: string, updatePlanDto: UpdatePlanDto): Promise<Plan> {
+  async update(id: string, dto: UpdatePlanDto): Promise<Plan> {
     const plan = await this.findOne(id);
+    const data: Record<string, unknown> = { ...dto };
 
-    const data: Partial<CreatePlanDto> & { total?: number } = {};
-
-    if (updatePlanDto.name !== undefined) {
-      data.name = updatePlanDto.name;
+    if (dto.pricePerUser !== undefined || dto.maxUsers !== undefined) {
+      const newPrice = dto.pricePerUser ?? Number(plan.pricePerUser);
+      const newMaxUsers = dto.maxUsers ?? plan.maxUsers;
+      data['total'] = Number(newPrice) * newMaxUsers;
     }
 
-    if (updatePlanDto.type !== undefined) {
-      data.type = updatePlanDto.type;
-    }
-
-    if (updatePlanDto.pricePerUser !== undefined) {
-      data.pricePerUser = updatePlanDto.pricePerUser;
-    }
-
-    if (updatePlanDto.maxUsers !== undefined) {
-      data.maxUsers = updatePlanDto.maxUsers;
-    }
-
-    if (updatePlanDto.isActive !== undefined) {
-      data.isActive = updatePlanDto.isActive;
-    }
-
-    if (data.pricePerUser !== undefined || data.maxUsers !== undefined) {
-      const newPrice = data.pricePerUser ?? Number(plan.pricePerUser);
-      const newMaxUsers = data.maxUsers ?? plan.maxUsers;
-      data.total = Number(newPrice) * newMaxUsers;
-    }
-
-    return this.prisma.plan.update({
-      where: { id },
-      data,
-    });
+    return this.prisma.plan.update({ where: { id }, data });
   }
 }
