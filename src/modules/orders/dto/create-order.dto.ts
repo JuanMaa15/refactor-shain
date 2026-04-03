@@ -1,5 +1,5 @@
 import { ApiProperty } from '@nestjs/swagger';
-import { Expose, Type } from 'class-transformer';
+import { Type } from 'class-transformer';
 import {
   IsEmail,
   IsNotEmpty,
@@ -16,19 +16,16 @@ export class CreateOrderDto {
   planId: string;
 
   @ApiProperty({ example: 'Juan Pérez' })
-  @Expose({ name: 'nombre' })
   @IsString({ message: 'El nombre debe ser una cadena' })
   @IsNotEmpty({ message: 'El nombre es obligatorio' })
   name: string;
 
   @ApiProperty({ example: 'juan.perez@mail.com' })
-  @Expose({ name: 'correo' })
   @IsEmail({}, { message: 'El correo no es válido' })
   @IsNotEmpty({ message: 'El correo es obligatorio' })
   email: string;
 
   @ApiProperty({ example: 5 })
-  @Expose({ name: 'cantidadUsuarios' })
   @Type(() => Number)
   @IsPositive({ message: 'La cantidad de usuarios debe ser mayor a cero' })
   @Min(1, { message: 'La cantidad de usuarios debe ser al menos 1' })
