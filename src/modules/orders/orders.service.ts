@@ -1,47 +1,43 @@
 import {
+  BadRequestException,
   Injectable,
   NotFoundException,
-  BadRequestException,
 } from '@nestjs/common';
 import { PrismaService } from '@/database/prisma.service';
-import { CreateOrderDto } from './dto/create-order.dto';
-import { UpdateOrderDto } from './dto/update-order.dto';
-import { OrderStatus } from '@/generated/prisma/enums';
+import { CreateOrderDto } from '@/modules/orders/dto/create-order.dto';
+import { UpdateOrderDto } from '@/modules/orders/dto/update-order.dto';
 import { Order, Transaction } from '@/generated/prisma/client';
+import { OrderStatus } from '@/generated/prisma/enums';
 import * as crypto from 'crypto';
 
 @Injectable()
 export class OrdersService {
   constructor(private readonly prisma: PrismaService) {}
 
-  async create(createOrderDto: CreateOrderDto): Promise<{ reference: string }> {
+  async create(dto: CreateOrderDto): Promise<{ reference: string }> {
     const plan = await this.prisma.plan.findUnique({
-      where: { id: createOrderDto.planId },
+      where: { id: dto.planId },
     });
 
     if (!plan || !plan.isActive) {
       throw new NotFoundException('El plan no existe o no está activo');
     }
 
-    if (
-      createOrderDto.quantityUsers < 1 ||
-      createOrderDto.quantityUsers > plan.maxUsers
-    ) {
+    if (dto.quantityUsers < 1 || dto.quantityUsers > plan.maxUsers) {
       throw new BadRequestException('La cantidad de usuarios es inválida');
     }
 
-    const unitPrice = Number(plan.pricePerUser);
-    const total = unitPrice * createOrderDto.quantityUsers;
+    const total = Number(plan.pricePerUser) * dto.quantityUsers;
     const reference = this.generateReference();
 
     const order = await this.prisma.order.create({
       data: {
         reference,
         planId: plan.id,
-        name: createOrderDto.name,
-        email: createOrderDto.email,
-        quantityUsers: createOrderDto.quantityUsers,
-        pricePerUser: unitPrice.toFixed(2),
+        name: dto.name,
+        email: dto.email,
+        quantityUsers: dto.quantityUsers,
+        pricePerUser: Number(plan.pricePerUser).toFixed(2),
         total: total.toFixed(2),
       },
     });
@@ -61,51 +57,34 @@ export class OrdersService {
       where: { id },
       include: { plan: true },
     });
-
-    if (!order) {
-      throw new NotFoundException('Orden no encontrada');
-    }
-
+    if (!order) throw new NotFoundException('Orden no encontrada');
     return order;
   }
 
-  async update(id: string, updateOrderDto: UpdateOrderDto): Promise<Order> {
+  async update(id: string, dto: UpdateOrderDto): Promise<Order> {
     const order = await this.findOne(id);
+    const data: Record<string, unknown> = {};
 
-    const data: Partial<UpdateOrderDto> & { total?: number } = {};
+    if (dto.name !== undefined) data['name'] = dto.name;
+    if (dto.email !== undefined) data['email'] = dto.email;
 
-    if (updateOrderDto.name !== undefined) {
-      data.name = updateOrderDto.name;
-    }
-
-    if (updateOrderDto.email !== undefined) {
-      data.email = updateOrderDto.email;
-    }
-
-    if (updateOrderDto.quantityUsers !== undefined) {
+    if (dto.quantityUsers !== undefined) {
       if (order.status !== OrderStatus.PENDING) {
         throw new BadRequestException(
           'Solo se puede actualizar la cantidad en órdenes pendientes',
         );
       }
-
       const plan = await this.prisma.plan.findUnique({
         where: { id: order.planId },
       });
+      if (!plan) throw new NotFoundException('Plan asociado no encontrado');
 
-      if (!plan) {
-        throw new NotFoundException('Plan asociado no encontrado');
-      }
-
-      if (
-        updateOrderDto.quantityUsers < 1 ||
-        updateOrderDto.quantityUsers > plan.maxUsers
-      ) {
+      if (dto.quantityUsers < 1 || dto.quantityUsers > plan.maxUsers) {
         throw new BadRequestException('La cantidad de usuarios es inválida');
       }
 
-      data.quantityUsers = updateOrderDto.quantityUsers;
-      data.total = Number(order.pricePerUser) * updateOrderDto.quantityUsers;
+      data['quantityUsers'] = dto.quantityUsers;
+      data['total'] = Number(order.pricePerUser) * dto.quantityUsers;
     }
 
     if (Object.keys(data).length === 0) {
@@ -121,14 +100,13 @@ export class OrdersService {
 
   async findTransactionsByOrder(orderId: string): Promise<Transaction[]> {
     await this.findOne(orderId);
-
     return this.prisma.transaction.findMany({
       where: { orderId },
       orderBy: { createdAt: 'desc' },
     });
   }
 
-  private generateReference() {
+  private generateReference(): string {
     return `SHN-${crypto.randomBytes(6).toString('hex').toUpperCase()}`;
   }
 }
