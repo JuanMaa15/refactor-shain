@@ -13,7 +13,7 @@ import { ApiCookieAuth, ApiOperation, ApiTags } from '@nestjs/swagger';
 import { UserRole } from '@/generated/prisma/enums';
 import { Roles } from '@/modules/auth/decorators';
 import { RolesGuard } from '@/modules/auth/guards';
-import { PlansService } from '../services/plans.service';
+import { PlansService } from '@/modules/plans/plans.service';
 import { CreatePlanDto } from '@/modules/plans/dto/create-plan.dto';
 import { UpdatePlanDto } from '@/modules/plans/dto/update-plan.dto';
 import { Public } from '@/modules/auth/decorators';
