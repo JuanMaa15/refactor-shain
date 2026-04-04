@@ -56,10 +56,20 @@ export class JwtStrategy extends PassportStrategy(Strategy) {
       throw new UnauthorizedException('Usuario inactivo');
     }
 
-    //Si expiró su periodo de prueba
-    if (user.trialPeriodEndsAt && new Date() > user.trialPeriodEndsAt) {
+    // Validar vigencia de acceso (trial o suscripción activa)
+    const now = new Date();
+    const trialActivo =
+      user.trialPeriodEndsAt !== null && now <= user.trialPeriodEndsAt;
+    const pagoActivo =
+      user.paymentPeriodEndsAt !== null && now <= user.paymentPeriodEndsAt;
+    const sinFechasDeControl =
+      user.trialPeriodEndsAt === null && user.paymentPeriodEndsAt === null;
+
+    if (!sinFechasDeControl && !trialActivo && !pagoActivo) {
       throw new UnauthorizedException(
-        'Tu período de prueba ha expirado. Por favor, actualiza tu plan.',
+        user.paymentPeriodEndsAt
+          ? 'Tu suscripción ha expirado. Por favor, renueva tu plan.'
+          : 'Tu período de prueba ha expirado. Por favor, adquiere un plan.',
       );
     }
 

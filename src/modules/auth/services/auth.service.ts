@@ -46,73 +46,75 @@ export class AuthService {
   ) {}
 
   async register(registerDto: RegisterDto): Promise<UserWithoutSensitive> {
-    const { password, confirmPassword: _unused, ...restRegister } = registerDto;
+    const {
+      password,
+      confirmPassword: _unused,
+      businessCode,
+      entryCode,
+      roleId,
+      ...baseData
+    } = registerDto;
 
-    //Validar username
     await this.authValidationsService.checkUserUniqueness('nombre de usuario', {
       username: registerDto.username,
     });
-
-    //Validar email
     await this.authValidationsService.checkUserUniqueness('email', {
       email: registerDto.email,
     });
 
-    //Validar si existe el codigo del negocio si es prestador de servicio
-    const role = await this.prisma.role.findUnique({
-      where: { id: registerDto.roleId },
-    });
-
-    if (!role) {
-      throw new NotFoundException('El rol no existe.');
+    if (entryCode && roleId) {
+      throw new BadRequestException(
+        'No puedes enviar un código de ingreso y un rol al mismo tiempo. Usa entryCode para suscripción o roleId para el período de prueba.',
+      );
     }
+
+    // ─── Flujo con código de ingreso (suscripción paga) ───────────────────────
+    if (entryCode) {
+      return this.registerWithEntryCode(entryCode, { ...baseData, password });
+    }
+
+    // ─── Flujo con rol (período de prueba gratuito) ───────────────────────────
+    if (!roleId) {
+      throw new BadRequestException(
+        'Debes proporcionar un código de ingreso o seleccionar un rol para el período de prueba.',
+      );
+    }
+
+    const role = await this.prisma.role.findUnique({ where: { id: roleId } });
+    if (!role) throw new NotFoundException('El rol no existe.');
 
     let businessId: string | null = null;
 
     if (role.name === UserRole.SERVICE_PROVIDER) {
-      if (!registerDto.businessCode) {
-        throw new BadRequestException('El codigo del negocio es requerido.');
+      if (!businessCode) {
+        throw new BadRequestException('El código de negocio es requerido.');
       }
-
-      const business = await this.businessService.findByJoinCode(
-        registerDto.businessCode,
-      );
-
+      const business = await this.businessService.findByJoinCode(businessCode);
       if (!business) {
-        throw new NotFoundException('El codigo del negocio no existe.');
+        throw new NotFoundException('El código de negocio no existe.');
       }
-
       businessId = business.id;
     }
 
     const hashedPassword = await bcrypt.hash(password, 10);
 
-    //Calcular fecha de fin de trial (14 días)
-    const trialPeriodEndsAt = addDays(new Date(), 14);
-
-    // 7. Crear usuario
     const user = await this.prisma.user.create({
       data: {
-        ...restRegister,
+        ...baseData,
+        roleId,
         password: hashedPassword,
         businessId,
-        trialPeriodEndsAt,
-        goal: 0, // Meta inicial en 0
-        //Sistema de referidos
-        // referraCode: null, // Se puede asignar después
-        //referredById: null,
+        trialPeriodEndsAt: addDays(new Date(), 14),
+        goal: 0,
       },
     });
 
-    //Si es un propietario de negocio, crear un negocio
     if (role.name === UserRole.BUSINESS_OWNER) {
       const businessJoinCode = this.generateBusinessCode();
-
       const newBusiness = await this.businessService.createBusiness({
         ownerId: user.id,
         businessJoinCode,
       });
-
       const updatedUser = await this.prisma.user.update({
         where: { id: user.id },
         data: { businessId: newBusiness.id },
@@ -120,9 +122,111 @@ export class AuthService {
       user.businessId = updatedUser.businessId;
     }
 
-    const { password: _, ...userWhitouthPassword } = user;
+    const { password: _, ...userWithoutPassword } = user;
+    return userWithoutPassword;
+  }
 
-    return userWhitouthPassword;
+  private async registerWithEntryCode(
+    code: string,
+    data: {
+      name: string;
+      lastName: string;
+      username: string;
+      email: string;
+      password: string;
+      phone?: string;
+    },
+  ): Promise<UserWithoutSensitive> {
+    const entryCode = await this.prisma.entryCode.findUnique({
+      where: { code },
+      include: { order: true, role: true },
+    });
+
+    if (!entryCode) {
+      throw new NotFoundException('El código de ingreso no existe.');
+    }
+    if (entryCode.used) {
+      throw new BadRequestException('El código de ingreso ya fue utilizado.');
+    }
+    if (entryCode.order.status !== 'APPROVED') {
+      throw new BadRequestException(
+        'El código de ingreso no corresponde a una orden aprobada.',
+      );
+    }
+
+    const roleName = entryCode.role.name as UserRole;
+    const paymentPeriodEndsAt = entryCode.order.endDate;
+
+    // SERVICE_PROVIDER: el propietario del negocio debe haberse registrado antes
+    let businessId: string | null = null;
+
+    if (roleName === UserRole.SERVICE_PROVIDER) {
+      const ownerRole = await this.prisma.role.findFirst({
+        where: { name: UserRole.BUSINESS_OWNER },
+      });
+
+      const ownerCode = await this.prisma.entryCode.findFirst({
+        where: {
+          orderId: entryCode.orderId,
+          roleId: ownerRole?.id,
+          used: true,
+        },
+        include: { user: true },
+      });
+
+      if (!ownerCode?.user?.businessId) {
+        throw new BadRequestException(
+          'El propietario del negocio aún no ha completado su registro. Por favor intenta más tarde.',
+        );
+      }
+
+      businessId = ownerCode.user.businessId;
+    }
+
+    const hashedPassword = await bcrypt.hash(data.password, 10);
+
+    // Crear usuario y marcar código como usado en una transacción
+    const user = await this.prisma.$transaction(async (tx) => {
+      const newUser = await tx.user.create({
+        data: {
+          name: data.name,
+          lastName: data.lastName,
+          username: data.username,
+          email: data.email,
+          password: hashedPassword,
+          phone: data.phone,
+          roleId: entryCode.roleId,
+          businessId,
+          entryCodeId: entryCode.id,
+          paymentPeriodEndsAt,
+          goal: 0,
+        },
+      });
+
+      await tx.entryCode.update({
+        where: { id: entryCode.id },
+        data: { used: true },
+      });
+
+      return newUser;
+    });
+
+    // BUSINESS_OWNER: crear el negocio después de crear el usuario
+    if (roleName === UserRole.BUSINESS_OWNER) {
+      const businessJoinCode = this.generateBusinessCode();
+      const newBusiness = await this.businessService.createBusiness({
+        ownerId: user.id,
+        businessJoinCode,
+      });
+      await this.prisma.user.update({
+        where: { id: user.id },
+        data: { businessId: newBusiness.id },
+      });
+      user.businessId = newBusiness.id;
+    }
+
+    const { password: _, ...userWithoutPassword } = user;
+    return userWithoutPassword;
   }
 
   private generateBusinessCode(): string {
@@ -169,10 +273,20 @@ export class AuthService {
       throw new UnauthorizedException('Tu cuenta se encuentra inactiva');
     }
 
-    // Validar trial period
-    if (user.trialPeriodEndsAt && new Date() > user.trialPeriodEndsAt) {
+    // Validar vigencia de acceso (trial o suscripción activa)
+    const now = new Date();
+    const trialActivo =
+      user.trialPeriodEndsAt !== null && now <= user.trialPeriodEndsAt;
+    const pagoActivo =
+      user.paymentPeriodEndsAt !== null && now <= user.paymentPeriodEndsAt;
+    const sinFechasDeControl =
+      user.trialPeriodEndsAt === null && user.paymentPeriodEndsAt === null;
+
+    if (!sinFechasDeControl && !trialActivo && !pagoActivo) {
       throw new UnauthorizedException(
-        'Tu período de prueba ha expirado. Por favor, actualiza tu plan.',
+        user.paymentPeriodEndsAt
+          ? 'Tu suscripción ha expirado. Por favor, renueva tu plan.'
+          : 'Tu período de prueba ha expirado. Por favor, adquiere un plan.',
       );
     }
 

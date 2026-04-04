@@ -41,7 +41,7 @@ export class RegisterDto {
   lastName: string;
 
   @ApiProperty({
-    description: 'Nombre del usuario único',
+    description: 'Nombre de usuario único',
     example: 'jperez',
     minLength: 4,
   })
@@ -58,7 +58,7 @@ export class RegisterDto {
   username: string;
 
   @ApiProperty({
-    description: 'Correo Electrónico',
+    description: 'Correo electrónico',
     example: 'jperez@jp.com',
   })
   @IsStringLowercase(ValidationMessages.isString('email'))
@@ -67,8 +67,7 @@ export class RegisterDto {
   email: string;
 
   @ApiProperty({
-    description:
-      'Contraseña (minimo 8 caracteres, debe incluir letras y números)',
+    description: 'Contraseña (mínimo 8 caracteres, letras y números)',
     example: 'SecurePassword123',
     minLength: 8,
   })
@@ -82,7 +81,7 @@ export class RegisterDto {
   password: string;
 
   @ApiProperty({
-    description: 'Confirmación de la contraseñas',
+    description: 'Confirmación de contraseña',
     example: 'SecurePassword123',
     minLength: 8,
   })
@@ -96,16 +95,8 @@ export class RegisterDto {
   @IsEqualTo('password', ValidationMessages.passwordsDoNotMatch())
   confirmPassword: string;
 
-  @ApiProperty({
-    description: 'ID del rol del usuario',
-    example: 'a1b2c3d4-e5f6-4a7b-8c9d-0e1f2a3b4c5d',
-  })
-  @IsUUID('4', ValidationMessages.isUUID('rol'))
-  @IsNotEmpty(ValidationMessages.isNotEmpty('rol'))
-  roleId: string;
-
   @ApiPropertyOptional({
-    description: 'Número de teléfono (opcional)',
+    description: 'Número de teléfono',
     example: '+573001234567',
   })
   @IsOptional()
@@ -115,10 +106,28 @@ export class RegisterDto {
 
   @ApiPropertyOptional({
     description:
-      'Código de negocio (OBLIGATORIO si el rol es SERVICE_PROVIDER)',
+      'ID del rol del usuario. Obligatorio para el período de prueba gratuito. Se omite si se usa entryCode.',
+    example: 'a1b2c3d4-e5f6-4a7b-8c9d-0e1f2a3b4c5d',
+  })
+  @IsOptional()
+  @IsUUID('4', ValidationMessages.isUUID('rol'))
+  roleId?: string;
+
+  @ApiPropertyOptional({
+    description:
+      'Código de negocio. Obligatorio si roleId corresponde a SERVICE_PROVIDER en el flujo de prueba.',
     example: 'd4f7a3b9c2e1',
   })
   @IsOptional()
   @IsStringTrimmed(ValidationMessages.isString('código de negocio'))
   businessCode?: string;
+
+  @ApiPropertyOptional({
+    description:
+      'Código de ingreso recibido por correo al adquirir una suscripción (formato SHN-XXXXXXXX). Si se proporciona, reemplaza roleId y businessCode.',
+    example: 'SHN-AB12CD34',
+  })
+  @IsOptional()
+  @IsString({ message: 'El código de ingreso debe ser una cadena de texto' })
+  entryCode?: string;
 }
