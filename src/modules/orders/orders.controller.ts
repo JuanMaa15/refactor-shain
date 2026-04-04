@@ -11,11 +11,13 @@ import {
 } from '@nestjs/common';
 import { ApiCookieAuth, ApiOperation, ApiTags } from '@nestjs/swagger';
 import { UserRole } from '@/generated/prisma/enums';
-import { Roles, Public } from '@/modules/auth/decorators';
+import { Roles, Public, CurrentUser } from '@/modules/auth/decorators';
 import { RolesGuard } from '@/modules/auth/guards';
 import { OrdersService } from '@/modules/orders/orders.service';
 import { CreateOrderDto } from '@/modules/orders/dto/create-order.dto';
 import { UpdateOrderDto } from '@/modules/orders/dto/update-order.dto';
+import { RenewOrderDto } from '@/modules/orders/dto/renew-order.dto';
+import { CurrentUser as CurrentUserType } from '@/modules/auth/interfaces';
 
 @ApiTags('Orders')
 @Controller('orders')
@@ -29,6 +31,37 @@ export class OrdersController {
   @ApiOperation({ summary: 'Crear orden de pago (público)' })
   async create(@Body() dto: CreateOrderDto) {
     return { status: 'success', data: await this.ordersService.create(dto) };
+  }
+
+  @Post('renew')
+  @UseGuards(RolesGuard)
+  @Roles(UserRole.BUSINESS_OWNER)
+  @ApiCookieAuth('token_shain')
+  @HttpCode(HttpStatus.CREATED)
+  @ApiOperation({
+    summary: '[BUSINESS_OWNER] Crear orden de renovación de suscripción',
+  })
+  async renew(
+    @CurrentUser() user: CurrentUserType,
+    @Body() dto: RenewOrderDto,
+  ) {
+    return {
+      status: 'success',
+      data: await this.ordersService.renew(user, dto),
+    };
+  }
+
+  @Get('my')
+  @UseGuards(RolesGuard)
+  @Roles(UserRole.BUSINESS_OWNER)
+  @ApiCookieAuth('token_shain')
+  @HttpCode(HttpStatus.OK)
+  @ApiOperation({ summary: '[BUSINESS_OWNER] Ver mis órdenes' })
+  async findMyOrders(@CurrentUser('email') email: string) {
+    return {
+      status: 'success',
+      data: await this.ordersService.findMyOrders(email),
+    };
   }
 
   @Get()

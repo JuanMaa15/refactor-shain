@@ -6,6 +6,7 @@ import {
 import { PrismaService } from '@/database/prisma.service';
 import { CreateOrderDto } from '@/modules/orders/dto/create-order.dto';
 import { UpdateOrderDto } from '@/modules/orders/dto/update-order.dto';
+import { RenewOrderDto } from '@/modules/orders/dto/renew-order.dto';
 import { Order, Transaction } from '@/generated/prisma/client';
 import { OrderStatus } from '@/generated/prisma/enums';
 import * as crypto from 'crypto';
@@ -95,6 +96,65 @@ export class OrdersService {
       where: { id },
       data,
       include: { plan: true },
+    });
+  }
+
+  async renew(
+    owner: { email: string; name: string; lastName: string },
+    dto: RenewOrderDto,
+  ): Promise<{ reference: string }> {
+    const lastApproved = await this.prisma.order.findFirst({
+      where: { email: owner.email, status: OrderStatus.APPROVED },
+      include: { plan: true },
+      orderBy: { createdAt: 'desc' },
+    });
+
+    let plan;
+    if (dto.planId) {
+      plan = await this.prisma.plan.findUnique({ where: { id: dto.planId } });
+      if (!plan || !plan.isActive) {
+        throw new NotFoundException('El plan no existe o no está activo');
+      }
+    } else if (lastApproved) {
+      plan = lastApproved.plan;
+    } else {
+      throw new BadRequestException(
+        'No tienes una suscripción previa. Especifica un planId para iniciar.',
+      );
+    }
+
+    const quantityUsers = dto.quantityUsers ?? lastApproved?.quantityUsers ?? 1;
+
+    if (quantityUsers < 1 || quantityUsers > plan.maxUsers) {
+      throw new BadRequestException(
+        `La cantidad de usuarios debe estar entre 1 y ${plan.maxUsers} para este plan`,
+      );
+    }
+
+    const total = Number(plan.pricePerUser) * quantityUsers;
+    const reference = this.generateReference();
+
+    const order = await this.prisma.order.create({
+      data: {
+        reference,
+        planId: plan.id,
+        name: `${owner.name} ${owner.lastName}`,
+        email: owner.email,
+        quantityUsers,
+        pricePerUser: Number(plan.pricePerUser).toFixed(2),
+        total: total.toFixed(2),
+        isRenewal: true,
+      },
+    });
+
+    return { reference: order.reference };
+  }
+
+  async findMyOrders(email: string): Promise<Order[]> {
+    return this.prisma.order.findMany({
+      where: { email },
+      include: { plan: true },
+      orderBy: { createdAt: 'desc' },
     });
   }
 
