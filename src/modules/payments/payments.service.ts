@@ -24,6 +24,7 @@ export class PaymentsService {
   ) {}
 
   async processWebhook(rawBody: Buffer, signature: string | undefined) {
+    this.logger.log(rawBody.toString('utf8'));
     if (!rawBody?.length) {
       throw new BadRequestException('Payload de webhook inválido');
     }
@@ -32,7 +33,7 @@ export class PaymentsService {
     const webhookSecret = this.configService.get<string>(
       'payments.wompi.webhookSecret',
     );
-
+    this.logger.log(signature);
     if (webhookSecret) {
       if (!signature)
         throw new UnauthorizedException('Firma de webhook faltante');
@@ -92,11 +93,13 @@ export class PaymentsService {
 
     const updateData: Record<string, unknown> = { status: mappedStatus };
 
+    let endDate: Date | null = null;
     if (mappedStatus === OrderStatus.APPROVED) {
       const startDate = new Date();
       const durationDays = order.plan.type === 'MONTHLY' ? 30 : 365;
+      endDate = addDays(startDate, durationDays);
       updateData['startDate'] = startDate;
-      updateData['endDate'] = addDays(startDate, durationDays);
+      updateData['endDate'] = endDate;
     }
 
     await this.prisma.order.update({
@@ -107,14 +110,79 @@ export class PaymentsService {
       `Orden ${order.reference}: ${order.status} → ${mappedStatus}`,
     );
 
-    if (mappedStatus === OrderStatus.APPROVED) {
-      await this.createEntryCodes(order);
+    if (mappedStatus === OrderStatus.APPROVED && endDate) {
+      if (order.isRenewal) {
+        await this.handleRenewalApproval(order, endDate);
+      } else {
+        await this.createEntryCodes(order);
+        await this.syncPaymentPeriodIfRegistered(order.email, endDate);
+      }
     }
 
     return { success: true };
   }
 
   // ─── Helpers privados ─────────────────────────────────────────────────────
+
+  private async handleRenewalApproval(
+    order: {
+      id: string;
+      email: string;
+      reference: string;
+      plan: { type: string };
+    },
+    endDate: Date,
+  ) {
+    const owner = await this.prisma.user.findUnique({
+      where: { email: order.email },
+    });
+
+    if (!owner || !owner.businessId) {
+      this.logger.warn(
+        `Renovación aprobada (${order.reference}) pero no se encontró negocio para ${order.email}`,
+      );
+      return;
+    }
+
+    await this.prisma.user.updateMany({
+      where: { businessId: owner.businessId },
+      data: { paymentPeriodEndsAt: endDate },
+    });
+
+    this.logger.log(
+      `Suscripción renovada para el negocio ${owner.businessId} hasta ${endDate.toISOString()}`,
+    );
+
+    await this.emailService.sendRenewalConfirmation(
+      order.email,
+      order.reference,
+      endDate,
+    );
+  }
+
+  private async syncPaymentPeriodIfRegistered(
+    email: string,
+    endDate: Date,
+  ): Promise<void> {
+    const owner = await this.prisma.user.findUnique({ where: { email } });
+    if (!owner) return; // aún no se ha registrado, es normal
+
+    if (owner.businessId) {
+      await this.prisma.user.updateMany({
+        where: { businessId: owner.businessId },
+        data: { paymentPeriodEndsAt: endDate },
+      });
+    } else {
+      await this.prisma.user.update({
+        where: { id: owner.id },
+        data: { paymentPeriodEndsAt: endDate },
+      });
+    }
+
+    this.logger.log(
+      `paymentPeriodEndsAt sincronizado para ${email} hasta ${endDate.toISOString()}`,
+    );
+  }
 
   private async createEntryCodes(order: {
     id: string;
@@ -138,7 +206,7 @@ export class PaymentsService {
       throw new InternalServerErrorException('Roles necesarios no encontrados');
     }
 
-    const codes: string[] = [];
+    const codes: { code: string; role: string }[] = [];
 
     const ownerCode = await this.prisma.entryCode.create({
       data: {
@@ -147,7 +215,7 @@ export class PaymentsService {
         roleId: ownerRole.id,
       },
     });
-    codes.push(ownerCode.code);
+    codes.push({ code: ownerCode.code, role: 'Propietario del negocio' });
 
     for (let i = 0; i < order.quantityUsers - 1; i++) {
       const c = await this.prisma.entryCode.create({
@@ -157,7 +225,7 @@ export class PaymentsService {
           roleId: providerRole.id,
         },
       });
-      codes.push(c.code);
+      codes.push({ code: c.code, role: 'Prestador de servicios' });
     }
 
     await this.emailService.sendOrderCodes(order.email, order.reference, codes);
@@ -194,6 +262,7 @@ export class PaymentsService {
       .createHmac('sha256', secret)
       .update(payload)
       .digest('hex');
+    this.logger.log(signature, expected);
     return expected === signature;
   }
 
