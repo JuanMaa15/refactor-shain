@@ -13,35 +13,35 @@ datasource db {
   provider = "postgresql"
 }
 
-enum UserRole{
+enum UserRole {
   ADMIN
   SERVICE_PROVIDER
   BUSINESS_OWNER
 }
 
 enum BookingStatus {
-  PENDING     // pendiente
+  PENDING // pendiente
   IN_PROGRESS // en proceso
-  DONE        // terminado
+  DONE // terminado
 }
 
 enum MovementType {
-  INCOME   // ingreso
-  EXPENSE  // egreso
-}
- 
-enum FrequencyType {
-  NEW        // nuevo
-  RECURRING  // recurrente
+  INCOME // ingreso
+  EXPENSE // egreso
 }
 
-model Role{
-  id String @id @default(uuid())
-  name String @unique
+enum FrequencyType {
+  NEW // nuevo
+  RECURRING // recurrente
+}
+
+model Role {
+  id       String  @id @default(uuid())
+  name     String  @unique
   isActive Boolean
 
   //Relaciones
-  users User[]
+  users      User[]
   entryCodes EntryCode[]
 
   //Timestamp
@@ -63,13 +63,13 @@ enum OrderStatus {
 }
 
 model Plan {
-  id String @id @default(uuid())
-  name String
-  type PlanType
-  pricePerUser Decimal @db.Decimal(12, 2)
-  maxUsers Int
-  total Decimal @db.Decimal(12, 2)
-  isActive Boolean @default(true)
+  id           String   @id @default(uuid())
+  name         String
+  type         PlanType
+  pricePerUser Decimal  @db.Decimal(12, 2)
+  maxUsers     Int
+  total        Decimal  @db.Decimal(12, 2)
+  isActive     Boolean  @default(true)
 
   orders Order[]
 
@@ -80,24 +80,24 @@ model Plan {
 }
 
 model Order {
-  id String @id @default(uuid())
+  id        String @id @default(uuid())
   reference String @unique
 
   planId String @map("plan_id")
-  plan Plan @relation(fields: [planId], references: [id])
+  plan   Plan   @relation(fields: [planId], references: [id])
 
-  name String
-  email String
-  quantityUsers Int @map("quantity_users")
-  pricePerUser Decimal @db.Decimal(12, 2) @map("price_per_user")
-  total Decimal @db.Decimal(12, 2)
-  status OrderStatus @default(PENDING)
-  isRenewal Boolean @default(false) @map("is_renewal")
-  startDate DateTime? @map("start_date")
-  endDate DateTime? @map("end_date")
+  name          String
+  email         String
+  quantityUsers Int         @map("quantity_users")
+  pricePerUser  Decimal     @map("price_per_user") @db.Decimal(12, 2)
+  total         Decimal     @db.Decimal(12, 2)
+  status        OrderStatus @default(PENDING)
+  isRenewal     Boolean     @default(false) @map("is_renewal")
+  startDate     DateTime?   @map("start_date")
+  endDate       DateTime?   @map("end_date")
 
   transactions Transaction[]
-  entryCodes EntryCode[]
+  entryCodes   EntryCode[]
 
   createdAt DateTime @default(now()) @map("created_at")
   updatedAt DateTime @updatedAt @map("updated_at")
@@ -106,16 +106,16 @@ model Order {
 }
 
 model Transaction {
-  id String @id @default(uuid())
-  wompiId String @unique @map("wompi_id")
-  status String
-  reference String
-  amountInCents Int @map("amount_in_cents")
+  id                String  @id @default(uuid())
+  wompiId           String  @unique @map("wompi_id")
+  status            String
+  reference         String
+  amountInCents     Int     @map("amount_in_cents")
   paymentMethodType String? @map("payment_method_type")
-  rawPayload Json @map("raw_payload")
+  rawPayload        Json    @map("raw_payload")
 
   orderId String @map("order_id")
-  order Order @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  order   Order  @relation(fields: [orderId], references: [id], onDelete: Cascade)
 
   createdAt DateTime @default(now()) @map("created_at")
   updatedAt DateTime @updatedAt @map("updated_at")
@@ -124,15 +124,15 @@ model Transaction {
 }
 
 model EntryCode {
-  id String @id @default(uuid())
-  code String @unique
+  id   String  @id @default(uuid())
+  code String  @unique
   used Boolean @default(false)
 
   orderId String @map("order_id")
-  order Order @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  order   Order  @relation(fields: [orderId], references: [id], onDelete: Cascade)
 
   roleId String @map("role_id")
-  role Role @relation(fields: [roleId], references: [id])
+  role   Role   @relation(fields: [roleId], references: [id])
 
   user User? @relation("UserEntryCode")
 
@@ -145,39 +145,41 @@ model EntryCode {
 model User {
   id String @id @default(uuid())
 
-   // Información personal
-  name String
-  lastName String @map("last_name")
-  username String @unique
-  email String @unique
+  // Información personal
+  name     String
+  lastName String  @map("last_name")
+  username String  @unique
+  email    String  @unique
   password String
-  phone String?
+  phone    String?
 
   //Logica de negocio
   isActive Boolean @default(true) @map("is_active")
-  goal Decimal @default(0) @db.Decimal(10, 2)
- 
+  goal     Decimal @default(0) @db.Decimal(10, 2)
+
   //Sistema de referidos 
-  /* referralCode String? @unique @map("referral_code")
-  referredById String? @map("referred_by") */
+  /**
+   * /* referralCode String? @unique @map("referral_code")
+   * referredById String? @map("referred_by")
+   */
 
   //Relaciones
-  role Role @relation(fields: [roleId], references: [id])
+  role   Role   @relation(fields: [roleId], references: [id])
   roleId String
 
-  entryCodeId String? @unique @map("entry_code_id")
-  entryCode EntryCode? @relation("UserEntryCode", fields: [entryCodeId], references: [id])
+  entryCodeId String?    @unique @map("entry_code_id")
+  entryCode   EntryCode? @relation("UserEntryCode", fields: [entryCodeId], references: [id])
 
-  businessId String? @map("business_id")
-  business Business? @relation(fields: [businessId], references: [id])
-  ownedBusiness Business? @relation("BusinessOwner")
-  resetTokens ResetToken[]
+  businessId    String?        @map("business_id")
+  business      Business?      @relation(fields: [businessId], references: [id])
+  ownedBusiness Business?      @relation("BusinessOwner")
+  resetTokens   ResetToken[]
   refreshTokens RefreshToken[]
-  movements Movement[]
-  bookings Booking[]
+  movements     Movement[]
+  bookings      Booking[]
 
   //Periodo de prueba y pago 
-  trialPeriodEndsAt DateTime? @map("trial_ends_at")
+  trialPeriodEndsAt   DateTime? @map("trial_ends_at")
   paymentPeriodEndsAt DateTime? @map("payment_ends_at")
 
   //Timestamp
@@ -189,17 +191,17 @@ model User {
 
 model Business {
   id String @id @default(uuid())
-  
-  name String?
-  goal Decimal @default(0) @db.Decimal(10, 2)
-  type String?
-  imageUrl String? @map("image_url")
-  description String?
-  businessJoinCode String @unique @map("business_join_code")
+
+  name             String?
+  goal             Decimal @default(0) @db.Decimal(10, 2)
+  type             String?
+  imageUrl         String? @map("image_url")
+  description      String?
+  businessJoinCode String  @unique @map("business_join_code")
 
   //Relaciones
   ownerId String @unique @map("owner_id")
-  owner User @relation("BusinessOwner", fields: [ownerId], references: [id], onDelete: Cascade)
+  owner   User   @relation("BusinessOwner", fields: [ownerId], references: [id], onDelete: Cascade)
 
   employees User[]
   movements Movement[]
@@ -214,88 +216,85 @@ model Business {
 
 model ResetToken {
   id String @id @default(uuid())
-  
-  token String @unique
-  used Boolean @default(false)
+
+  token     String   @unique
+  used      Boolean  @default(false)
   expiresAt DateTime @map("expires_at")
-  
+
   userId String @map("user_id")
-  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   createdAt DateTime @default(now()) @map("created_at")
 
   @@index([token])
   @@index([expiresAt])
-
   @@map("reset_tokens")
 }
 
 model RefreshToken {
   id String @id @default(uuid())
-   
-  token String @unique
+
+  token     String   @unique
   expiresAt DateTime @map("expires_at")
-  revoked Boolean @default(false)
-  
+  revoked   Boolean  @default(false)
+
   userId String @map("user_id")
-  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   createdAt DateTime @default(now()) @map("created_at")
   updatedAt DateTime @updatedAt @map("updated_at")
 
   @@index([token])
   @@index([userId])
-
   @@map("refresh_tokens")
 }
 
 model Movement {
-  id          String        @id @default(uuid())
- 
+  id String @id @default(uuid())
+
   type        MovementType
   frequency   FrequencyType?
-  value       Decimal       @db.Decimal(12, 2)
-  description String?       
-  date        DateTime      @db.Date
+  value       Decimal        @db.Decimal(12, 2)
+  description String?
+  date        DateTime       @db.Date
 
   // Relaciones
-  userId      String        @map("user_id")
-  user        User          @relation(fields: [userId], references: [id], onDelete: Cascade)
- 
-  businessId  String        @map("business_id")
-  business    Business      @relation(fields: [businessId], references: [id], onDelete: Cascade)
- 
+  userId String @map("user_id")
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  businessId String   @map("business_id")
+  business   Business @relation(fields: [businessId], references: [id], onDelete: Cascade)
+
   // Timestamps
-  createdAt   DateTime      @default(now()) @map("created_at")
-  updatedAt   DateTime      @updatedAt      @map("updated_at")
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
 
   @@index([userId])
   @@index([businessId])
-  @@index([userId, date])       // Cubre: resumen diario/mensual por usuario
-  @@index([businessId, date])   // Cubre: resumen diario/mensual por negocio
-  @@index([date])               // Cubre: queries globales por fecha
- 
+  @@index([userId, date]) // Cubre: resumen diario/mensual por usuario
+  @@index([businessId, date]) // Cubre: resumen diario/mensual por negocio
+  @@index([date]) // Cubre: queries globales por fecha
   @@map("movements")
 }
 
 model TimeSlot {
-  id        String   @id @default(uuid())
+  id String @id @default(uuid())
 
-  hour      String                        // "08:00", "09:00", etc.
-  isActive  Boolean  @default(true)       @map("is_active")
+  hour     String // "08:00", "09:00", etc.
+  isActive Boolean @default(true) @map("is_active")
 
   // Relaciones
-  bookings  Booking[]
+  bookings Booking[]
 
   // Timestamps
-  createdAt DateTime @default(now())      @map("created_at")
-  updatedAt DateTime @updatedAt           @map("updated_at")
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
 
   @@map("time_slots")
 }
 
 model Booking {
-  id           String        @id @default(uuid())
+  id String @id @default(uuid())
 
   date         DateTime      @db.Date
   customerName String?       @map("customer_name")
@@ -303,22 +302,20 @@ model Booking {
   status       BookingStatus @default(PENDING)
 
   // Relaciones
-  userId       String        @map("user_id")
-  user         User          @relation(fields: [userId], references: [id], onDelete: Cascade)
+  userId String @map("user_id")
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
 
-  timeSlotId   String        @map("time_slot_id")
-  timeSlot     TimeSlot      @relation(fields: [timeSlotId], references: [id])
+  timeSlotId String   @map("time_slot_id")
+  timeSlot   TimeSlot @relation(fields: [timeSlotId], references: [id])
 
   // Timestamps
-  createdAt    DateTime      @default(now()) @map("created_at")
-  updatedAt    DateTime      @updatedAt      @map("updated_at")
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
 
   // Un usuario no puede reservar el mismo slot dos veces en el mismo día
   @@unique([date, timeSlotId, userId])
-
   @@index([userId])
-  @@index([userId, date])     // Cubre: consultas de disponibilidad y listados por día
+  @@index([userId, date]) // Cubre: consultas de disponibilidad y listados por día
   @@index([timeSlotId])
-
   @@map("bookings")
 }
