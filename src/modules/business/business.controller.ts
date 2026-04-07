@@ -5,7 +5,6 @@ import {
   HttpCode,
   HttpStatus,
   Param,
-  ParseUUIDPipe,
   Patch,
   UploadedFile,
   UseGuards,
@@ -41,7 +40,7 @@ export class BusinessController {
   @ApiResponse({ status: 403, description: 'No eres el dueño de este negocio' })
   @ApiResponse({ status: 404, description: 'Negocio no encontrado' })
   async getBusiness(
-    @Param('id', ParseUUIDPipe) id: string,
+    @Param('id') id: string,
     @CurrentUser() _user: CurrentUserInterface,
   ) {
     // Pasamos el userId para que el service verifique ownership
@@ -70,7 +69,7 @@ export class BusinessController {
   })
   @ApiResponse({ status: 415, description: 'Tipo de imagen no permitido' })
   async updateBusiness(
-    @Param('id', ParseUUIDPipe) id: string,
+    @Param('id') id: string,
     @CurrentUser('id') userId: string,
     @Body() updateBusinessDto: UpdateBusinessDto,
     @UploadedFile() image?: Express.Multer.File,
