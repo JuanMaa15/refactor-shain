@@ -5,7 +5,6 @@ import {
   HttpCode,
   HttpStatus,
   Param,
-  ParseUUIDPipe,
   Patch,
   Post,
   Query,
@@ -103,7 +102,7 @@ export class TimeSlotController {
   @ApiResponse({ status: 200, description: 'Franja horaria actualizada' })
   @ApiResponse({ status: 404, description: 'Franja horaria no encontrada' })
   async update(
-    @Param('id', ParseUUIDPipe) id: string,
+    @Param('id') id: string,
     @Body() dto: UpdateTimeSlotDto,
   ) {
     const timeSlot = await this.timeSlotService.update(id, dto);
