@@ -104,7 +104,7 @@ export class AuthService {
         roleId,
         password: hashedPassword,
         businessId,
-        trialPeriodEndsAt: addDays(new Date(), 14),
+        trialPeriodEndsAt: addDays(new Date(), 30),
         goal: 0,
       },
     });
