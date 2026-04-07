@@ -6,7 +6,6 @@ import {
   HttpCode,
   HttpStatus,
   Param,
-  ParseUUIDPipe,
   Patch,
   UseGuards,
 } from '@nestjs/common';
@@ -122,7 +121,7 @@ export class UserController {
   @ApiResponse({ status: 404, description: 'Usuario no encontrado' })
   async findOne(
     @CurrentUser() currentUser: CurrentUserInterface,
-    @Param('id', ParseUUIDPipe) id: string,
+    @Param('id') id: string,
   ) {
     const user = await this.userService.findOneById(id);
 
@@ -150,7 +149,7 @@ export class UserController {
   @ApiResponse({ status: 404, description: 'Usuario no encontrado' })
   @ApiResponse({ status: 409, description: 'Username o email ya en uso' })
   async updateUser(
-    @Param('id', ParseUUIDPipe) id: string,
+    @Param('id') id: string,
     @Body() updateUserDto: UpdateUserDto,
   ) {
     const updatedUser = await this.userService.updateUser(id, updateUserDto);
