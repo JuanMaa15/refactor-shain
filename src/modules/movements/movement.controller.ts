@@ -6,7 +6,6 @@ import {
   HttpCode,
   HttpStatus,
   Param,
-  ParseUUIDPipe,
   Patch,
   Post,
   Query,
@@ -78,7 +77,7 @@ export class MovementsController {
   @ApiResponse({ status: 403, description: 'No tienes permiso' })
   @ApiResponse({ status: 404, description: 'Movimiento no encontrado' })
   async update(
-    @Param('id', ParseUUIDPipe) id: string,
+    @Param('id') id: string,
     @Body() dto: UpdateMovementDto,
     @CurrentUser('id') userId: string,
   ) {
@@ -101,7 +100,7 @@ export class MovementsController {
   @ApiResponse({ status: 403, description: 'No tienes permiso' })
   @ApiResponse({ status: 404, description: 'Movimiento no encontrado' })
   async delete(
-    @Param('id', ParseUUIDPipe) id: string,
+    @Param('id') id: string,
     @CurrentUser('id') userId: string,
   ): Promise<void> {
     await this.movementService.delete(id, userId);
@@ -113,7 +112,7 @@ export class MovementsController {
   @ApiOperation({ summary: 'Resumen estadístico del usuario' })
   @ApiResponse({ status: 200, description: 'Resumen obtenido correctamente' })
   async getSummary(
-    @Param('userId', ParseUUIDPipe) userId: string,
+    @Param('userId') userId: string,
     @CurrentUser() user: CurrentUserInterface,
   ) {
     const summary = await this.movementSummaryService.getSummaryAndStatistics({
@@ -154,7 +153,7 @@ export class MovementsController {
   @HttpCode(HttpStatus.OK)
   @ApiOperation({ summary: 'Movimientos de un usuario con filtros' })
   async getByUser(
-    @Param('userId', ParseUUIDPipe) userId: string,
+    @Param('userId') userId: string,
     @Query() query: GetMovementsQueryDto,
   ) {
     const result = await this.movementService.findByUser(userId, query);
@@ -175,7 +174,7 @@ export class MovementsController {
     summary: '[BUSINESS_OWNER] Movimientos del negocio agrupados por día',
   })
   async getByBusiness(
-    @Param('businessId', ParseUUIDPipe) businessId: string,
+    @Param('businessId') businessId: string,
     @Query() query: GetMovementsQueryDto,
   ) {
     const result = await this.movementService.findByBusiness(businessId, query);
@@ -192,7 +191,7 @@ export class MovementsController {
   @HttpCode(HttpStatus.OK)
   @ApiOperation({ summary: 'Obtener un movimiento por ID' })
   @ApiResponse({ status: 404, description: 'Movimiento no encontrado' })
-  async getOne(@Param('id', ParseUUIDPipe) id: string) {
+  async getOne(@Param('id') id: string) {
     const movement = await this.movementService.findOne(id);
 
     return {
