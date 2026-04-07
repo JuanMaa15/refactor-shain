@@ -6,7 +6,6 @@ import {
   HttpCode,
   HttpStatus,
   Param,
-  ParseUUIDPipe,
   Patch,
   Post,
   Query,
@@ -78,7 +77,7 @@ export class BookingController {
   @ApiResponse({ status: 403, description: 'Sin permiso' })
   @ApiResponse({ status: 404, description: 'Reserva no encontrada' })
   async update(
-    @Param('id', ParseUUIDPipe) id: string,
+    @Param('id') id: string,
     @Body() dto: UpdateBookingDto,
     @CurrentUser('id') userId: string,
   ) {
@@ -99,7 +98,7 @@ export class BookingController {
   @ApiResponse({ status: 403, description: 'Sin permiso' })
   @ApiResponse({ status: 404, description: 'Reserva no encontrada' })
   async updateStatus(
-    @Param('id', ParseUUIDPipe) id: string,
+    @Param('id') id: string,
     @Body() dto: UpdateBookingStatusDto,
     @CurrentUser('id') userId: string,
   ) {
@@ -121,7 +120,7 @@ export class BookingController {
   @ApiResponse({ status: 403, description: 'Sin permiso' })
   @ApiResponse({ status: 404, description: 'Reserva no encontrada' })
   async delete(
-    @Param('id', ParseUUIDPipe) id: string,
+    @Param('id') id: string,
     @CurrentUser('id') userId: string,
   ): Promise<void> {
     await this.bookingsService.delete(id, userId);

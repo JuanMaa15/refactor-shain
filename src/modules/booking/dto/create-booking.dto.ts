@@ -21,7 +21,7 @@ export class CreateBookingDto {
     example: 'uuid-del-slot',
     description: 'ID de la franja horaria a reservar',
   })
-  @IsUUID('4', ValidationMessages.isUUID('franja horaria'))
+  @IsString(ValidationMessages.isString('ID de la franja horaria'))
   timeSlotId: string;
 
   @ApiPropertyOptional({
