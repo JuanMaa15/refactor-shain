@@ -105,7 +105,7 @@ export class MovementService {
       },
     );
 
-    this.logger.debug(
+    console.log(
       `Agregados por día para negocio ${businessId} con filtro ${JSON.stringify(
         query,
       )}: ${JSON.stringify(movements)}`,
