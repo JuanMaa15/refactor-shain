@@ -90,7 +90,7 @@ export class MovementRepository {
 
     return this.prisma.$queryRaw<DayMovementAggregate[]>`
       SELECT
-        TO_CHAR(date AT TIME ZONE 'America/Bogota', 'YYYY-MM-DD') AS date,
+        TO_CHAR(date, 'YYYY-MM-DD') AS date,
         type,
         SUM(value)::float AS value
       FROM movements
