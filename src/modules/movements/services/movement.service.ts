@@ -1,6 +1,7 @@
 import {
   ForbiddenException,
   Injectable,
+  Logger,
   NotFoundException,
 } from '@nestjs/common';
 import { Movement, MovementType, Prisma } from '@/generated/prisma/client';
@@ -20,6 +21,8 @@ import { buildDateFilter, getLastDaysRange } from '../movement-date.util';
 
 @Injectable()
 export class MovementService {
+  private logger = new Logger(MovementService.name);
+
   constructor(private readonly movementRepository: MovementRepository) {}
 
   async create(
@@ -93,11 +96,22 @@ export class MovementService {
   ): Promise<DayMovementAggregate[]> {
     const dateFilter = buildDateFilter(query.filterDate, query.from, query.to);
 
-    return this.movementRepository.getDayAggregatesByBusiness(businessId, {
-      type: query.type,
-      dateGte: dateFilter?.gte,
-      dateLte: dateFilter?.lte,
-    });
+    const movements = await this.movementRepository.getDayAggregatesByBusiness(
+      businessId,
+      {
+        type: query.type,
+        dateGte: dateFilter?.gte,
+        dateLte: dateFilter?.lte,
+      },
+    );
+
+    this.logger.debug(
+      `Agregados por día para negocio ${businessId} con filtro ${JSON.stringify(
+        query,
+      )}: ${JSON.stringify(movements)}`,
+    );
+
+    return movements;
   }
 
   async findLastDays(
