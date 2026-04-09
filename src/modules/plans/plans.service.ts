@@ -9,11 +9,14 @@ export class PlansService {
   constructor(private readonly prisma: PrismaService) {}
 
   async create(dto: CreatePlanDto): Promise<Plan> {
-    const total = Number(dto.pricePerUser) * dto.maxUsers;
+    const base = dto.basePrice ?? dto.pricePerUser;
+    const additionalUsers = Math.max(dto.maxUsers - 1, 0);
+    const total = Number(base) + Number(dto.pricePerUser) * additionalUsers;
     return this.prisma.plan.create({
       data: {
         name: dto.name,
         type: dto.type,
+        basePrice: dto.basePrice ?? null,
         pricePerUser: dto.pricePerUser,
         maxUsers: dto.maxUsers,
         total,
@@ -43,10 +46,12 @@ export class PlansService {
     const plan = await this.findOne(id);
     const data: Record<string, unknown> = { ...dto };
 
-    if (dto.pricePerUser !== undefined || dto.maxUsers !== undefined) {
+    if (dto.basePrice !== undefined || dto.pricePerUser !== undefined || dto.maxUsers !== undefined) {
+      const newBasePrice = dto.basePrice ?? Number(plan.basePrice);
       const newPrice = dto.pricePerUser ?? Number(plan.pricePerUser);
       const newMaxUsers = dto.maxUsers ?? plan.maxUsers;
-      data['total'] = Number(newPrice) * newMaxUsers;
+      const additionalUsers = Math.max(newMaxUsers - 1, 0);
+      data['total'] = Number(newBasePrice) + Number(newPrice) * additionalUsers;
     }
 
     return this.prisma.plan.update({ where: { id }, data });

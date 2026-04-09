@@ -22,7 +22,14 @@ export class CreatePlanDto {
   @IsEnum(PlanType, { message: 'El tipo de plan debe ser MONTHLY o ANNUAL' })
   type: PlanType;
 
-  @ApiProperty({ example: 15 })
+  @ApiProperty({ example: 25000, description: 'Precio base del plan (1 usuario)', required: false })
+  @IsOptional()
+  @Type(() => Number)
+  @IsNumber({}, { message: 'El precio base debe ser numérico' })
+  @IsPositive({ message: 'El precio base debe ser mayor a cero' })
+  basePrice?: number;
+
+  @ApiProperty({ example: 4000, description: 'Precio por cada usuario adicional' })
   @Type(() => Number)
   @IsNumber({}, { message: 'El precio por usuario debe ser numérico' })
   @IsPositive({ message: 'El precio por usuario debe ser mayor a cero' })

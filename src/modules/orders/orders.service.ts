@@ -28,7 +28,8 @@ export class OrdersService {
       throw new BadRequestException('La cantidad de usuarios es inválida');
     }
 
-    const total = Number(plan.pricePerUser) * dto.quantityUsers;
+    const additionalUsers = Math.max(dto.quantityUsers - 1, 0);
+    const total = Number(plan.basePrice) + Number(plan.pricePerUser) * additionalUsers;
     const reference = this.generateReference();
 
     const order = await this.prisma.order.create({
@@ -84,8 +85,9 @@ export class OrdersService {
         throw new BadRequestException('La cantidad de usuarios es inválida');
       }
 
+      const additionalUsers = Math.max(dto.quantityUsers - 1, 0);
       data['quantityUsers'] = dto.quantityUsers;
-      data['total'] = Number(order.pricePerUser) * dto.quantityUsers;
+      data['total'] = Number(plan.basePrice) + Number(order.pricePerUser) * additionalUsers;
     }
 
     if (Object.keys(data).length === 0) {
@@ -131,7 +133,8 @@ export class OrdersService {
       );
     }
 
-    const total = Number(plan.pricePerUser) * quantityUsers;
+    const additionalUsersRenew = Math.max(quantityUsers - 1, 0);
+    const total = Number(plan.basePrice) + Number(plan.pricePerUser) * additionalUsersRenew;
     const reference = this.generateReference();
 
     const order = await this.prisma.order.create({
