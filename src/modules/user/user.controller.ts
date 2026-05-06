@@ -18,7 +18,7 @@ import {
 import { UserService } from './user.service';
 import { CurrentUser as CurrentUserInterface } from '@/modules/auth/interfaces';
 import { CurrentUser, Roles } from '../auth/decorators';
-import { UpdateProfileDto, UpdateUserDto } from './dto';
+import { UpdateProfileDto, UpdateTrialPeriodDto, UpdateUserDto } from './dto';
 import { RolesGuard } from '../auth/guards';
 import { UserRole } from '@/generated/prisma/enums';
 
@@ -137,6 +137,35 @@ export class UserController {
     return {
       status: 'success',
       data: user,
+    };
+  }
+
+  @Patch(':id/trial')
+  @UseGuards(RolesGuard)
+  @Roles(UserRole.ADMIN)
+  @HttpCode(HttpStatus.OK)
+  @ApiOperation({
+    summary: '[ADMIN] Actualizar periodo de prueba de un usuario',
+  })
+  @ApiResponse({ status: 200, description: 'Periodo de prueba actualizado' })
+  @ApiResponse({ status: 400, description: 'Fecha inválida o en el pasado' })
+  @ApiResponse({ status: 404, description: 'Usuario no encontrado' })
+  async updateTrialPeriod(
+    @Param('id') id: string,
+    @Body() updateTrialPeriodDto: UpdateTrialPeriodDto,
+  ) {
+    const updatedUser = await this.userService.updateTrialPeriod(
+      id,
+      updateTrialPeriodDto,
+    );
+
+    return {
+      status: 'success',
+      message: 'Periodo de prueba actualizado correctamente.',
+      data: {
+        id: updatedUser.id,
+        trialPeriodEndsAt: updatedUser.trialPeriodEndsAt,
+      },
     };
   }
 

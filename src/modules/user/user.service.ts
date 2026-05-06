@@ -6,7 +6,7 @@ import {
 } from '@nestjs/common';
 import { PublicUser, UserWithRelations } from './interfaces';
 import { Prisma } from '@/generated/prisma/client';
-import { UpdateProfileDto, UpdateUserDto } from './dto';
+import { UpdateProfileDto, UpdateTrialPeriodDto, UpdateUserDto } from './dto';
 
 @Injectable()
 export class UserService {
@@ -128,6 +128,19 @@ export class UserService {
         ...restDto,
         ...(roleId && { roleId }),
       },
+      omit: { password: true },
+    });
+  }
+
+  async updateTrialPeriod(
+    id: string,
+    dto: UpdateTrialPeriodDto,
+  ): Promise<PublicUser> {
+    await this.findOneById(id);
+
+    return this.prisma.user.update({
+      where: { id },
+      data: { trialPeriodEndsAt: dto.trialPeriodEndsAt },
       omit: { password: true },
     });
   }
