@@ -93,13 +93,13 @@ export class PrismaService
     // ============================================
 
     // Queries (solo desarrollo)
-    if (isDevelopment) {
+    /* if (isDevelopment) {
       this.$on('query' as never, (e: any) => {
         this.logger.debug(`Query: ${e.query}`);
         this.logger.debug(`Params: ${e.params}`);
         this.logger.debug(`Duration: ${e.duration}ms`);
       });
-    }
+    } */
 
     // Errores
     this.$on('error' as never, (e: any) => {

@@ -58,5 +58,5 @@ export const payments = registerAs('payments', () => ({
 }));
 
 export const cookie = registerAs('cookie', () => ({
-  domain: process.env.COOKIE_DOMAIN || 'use2.devtunnels.ms',
+  domain: process.env.COOKIE_DOMAIN || 'use.devtunnels.ms',
 }));
