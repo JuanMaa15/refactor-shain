@@ -20,7 +20,11 @@ import {
 import { AuthValidationsService } from './auth-validations.service';
 import { UserWithoutSensitive } from '@/modules/auth/interfaces';
 import { Response } from 'express';
-import { clearAuthTokens, setAuthTokens } from '@/common/utils/cookies.util';
+import {
+  clearAuthTokens,
+  setAuthCookie,
+  setAuthTokens,
+} from '@/common/utils/cookies.util';
 import crypto from 'crypto';
 import { BusinessService } from '@/modules/business/business.service';
 
@@ -412,19 +416,19 @@ export class AuthService {
       },
     );
 
-    const isProduction = this.configService.get('NODE_ENV') === 'production';
+    const isProduction =
+      this.configService.get<string>('app.nodeEnv') === 'production';
     const domain = this.configService.get<string>('cookie.domain');
 
-    res.cookie('token_shain', newAccessToken, {
-      httpOnly: true,
-      secure: isProduction,
-      sameSite: isProduction ? 'lax' : 'strict',
-      maxAge: 15 * 60 * 1000,
+    setAuthCookie(res, {
+      name: 'token_shain',
+      value: newAccessToken,
+      maxAge: 15 * 60 * 1000, // 15 minutos
+      isProduction,
       domain,
-      path: '/',
     });
 
-    return newAccessToken; // ← AGREGAR ESTE RETURN
+    return newAccessToken;
   }
 
   async forgotPassword(forgotPasswordDto: ForgotPasswordDto): Promise<void> {

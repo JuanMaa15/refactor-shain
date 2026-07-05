@@ -112,5 +112,5 @@ export function setAuthTokens({
  */
 export function clearAuthTokens(res: Response, domain?: string): void {
   clearAuthCookie(res, 'token_shain', domain);
-  clearAuthCookie(res, 'refresh_token', domain);
+  clearAuthCookie(res, 'refresh_token_shain', domain);
 }

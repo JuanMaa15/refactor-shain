@@ -26,7 +26,7 @@ import {
   ResetPasswordDto,
 } from './dto';
 import { AuthService } from './services/auth.service';
-import { LocalAuthGuard } from './guards';
+import { JwtRefreshGuard, LocalAuthGuard } from './guards';
 import { CurrentUser as CurrentUserInterface } from './interfaces';
 import { Request, Response } from 'express';
 
@@ -89,6 +89,34 @@ export class AuthController {
         businessId: loggedUser.businessId,
         businessImage: loggedUser.business?.imageUrl ?? null,
       },
+    };
+  }
+
+  @Public()
+  @UseGuards(JwtRefreshGuard)
+  @Post('refresh')
+  @HttpCode(HttpStatus.OK)
+  @ApiCookieAuth('refresh_token_shain')
+  @ApiOperation({ summary: 'Renovar access token con el refresh token' })
+  @ApiResponse({ status: 200, description: 'Nuevo access token emitido' })
+  @ApiResponse({
+    status: 401,
+    description: 'Refresh token inválido, revocado o expirado',
+  })
+  async refresh(
+    @Req() req: Request,
+    @Res({ passthrough: true }) res: Response,
+  ) {
+    const { userId, refreshToken } = req.user as {
+      userId: string;
+      refreshToken: string;
+    };
+
+    await this.authService.refreshAccessToken(userId, refreshToken, res);
+
+    return {
+      status: 'success',
+      message: 'Access token renovado correctamente.',
     };
   }
 

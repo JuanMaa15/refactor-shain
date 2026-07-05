@@ -18,16 +18,17 @@ export class JwtRefreshStrategy extends PassportStrategy(
     super({
       jwtFromRequest: ExtractJwt.fromExtractors([
         (req: Request) => {
-          return req?.cookies?.refresh_token_shain;
+          return (req?.cookies?.refresh_token_shain as string) ?? null;
         },
       ]),
       ignoreExpiration: false,
       secretOrKey: configService.get<string>('jwt.refresh.secret') as string,
+      passReqToCallback: true,
     });
   }
 
   async validate(req: Request, payload: JwtPayload) {
-    const refreshToken = req.cookies?.refresh_token;
+    const refreshToken = req.cookies?.refresh_token_shain as string;
 
     const refreshTokenRecord = await this.prisma.refreshToken.findUnique({
       where: { token: refreshToken },
